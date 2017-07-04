@@ -14,7 +14,7 @@ http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/cor
 http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
 http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
     
-    <http:listener-config name="HTTPS_Listener_Configuration" protocol="HTTPS" host="0.0.0.0" port="${https.port}" doc:name="HTTP Listener Configuration">
+    <http:listener-config name="HTTPS_Listener_Configuration"  protocol="HTTPS"    host="0.0.0.0" port="8082" doc:name="HTTP Listener Configuration" >
         <tls:context>
             <tls:key-store type="jks" path="${keystore.location}" keyPassword="${key.password}" password="${keystore.password}" alias= "${key.alias}"/>
         </tls:context>
@@ -24,8 +24,8 @@ http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/m
             <tls:key-store type="jks" path="${keystore.location}" keyPassword="${key.password}" password="${keystore.password}" alias= "${key.alias}"/>
         </tls:context>
     </http:request-config>
-    <http:request-config name="Order_Request_Configuration" host="${order-api.host}" port="${order-api.port}" basePath="${order-api.basePath}" doc:name="HTTP Request Configuration" >    	
-    </http:request-config>
+    <http:request-config name="Omnichannel_Request_Configuration" host="${omni-experience-api.host}" port="${omni-experience-api.port}" basePath="${omni-experience-api.baseUrl}" doc:name="HTTP Request Configuration" >    	
+    </http:request-config>	
 	<flow name="webhook-flow">
         <http:listener config-ref="HTTPS_Listener_Configuration" path="/webhook" doc:name="HTTP"/>
         <choice doc:name="Operation?">
@@ -109,34 +109,44 @@ payload]]></dw:set-payload>
         <flow-ref name="list-response" doc:name="list-response"/>
 
 
-        <http:request config-ref="Order_Request_Configuration" path="/orders" method="GET" doc:name="GET /orders"/>
-
-        <http:request config-ref="Order_Request_Configuration" path="/orders/{orderId}/orderItems" method="GET" doc:name="GET /orders/{orderId}/orderItems">
+        <http:request config-ref="Omnichannel_Request_Configuration" path="/customers/{customerId}/orders" method="GET" doc:name="GET /customers/{customerId}/orders">
             <http:request-builder>
-                <http:uri-param paramName="orderId" value="#[dw( ' (payload.orders[0].href splitBy &quot;/&quot;) [-1]' )]"/>
+                <http:uri-param paramName="customerId" value="${orders.customerId}"/>
+
             </http:request-builder>
         </http:request>
-        <logger message="output of GET /orders/{id}/orderItems:  #[message.payloadAs(java.lang.String)]" level="INFO" doc:name="Log OrderItems"/>
+
 
         <dw:transform-message doc:name="intermediate mapping">
             <dw:input-payload/>
             <dw:set-payload><![CDATA[%dw 1.0
 %output application/json
 ---
+using(order = payload[0])
 {
-	orderId: (payload.'_links'.salesOrder.href splitBy '/')[-1],
-	products: payload.orderItems map {
-		productId: $.item.productId,
-		url: ("http://anypoint-store-webportal-dev.surge.sh/product/" ++  $.item.productId),
-		quantity: $.quantity.amount,
-		price: ($.quantity.amount * $.itemUnitPrice.amount.currencyValue) ++ " " ++ $.itemUnitPrice.amount.currency
+	orderId: order.id,
+	totalPrice: order.price,
+	products: order.orderItems map {
+		variantId: $.orderItemId,
+		(productId: "eb8c8ca7-3c42-4489-a820-3aa138430b75" when ($.orderItemId == "88668866-2c6d-4fa6-9e17-4b2c42e0f051") otherwise {
+				productId: "cd67cd8a-8901-48c5-890b-0a21f4a0f8ad"
+			}),
+		productName: $.productName,
+		quantity: $.quantity
 	}
 	
 	
 }
 ]]></dw:set-payload>
+            <dw:set-variable variableName="totalPrice"><![CDATA[%dw 1.0
+%output application/json
+---
+{
+	totalPrice: payload[0].price
+}]]></dw:set-variable>
         </dw:transform-message>
 
+        <logger message="#[payload:java.lang.String]" level="INFO" doc:name="Logger"/>
         <dw:transform-message doc:name="Response Message" >
         <dw:input-payload doc:sample="messageData.json" mimeType="application/json"/>
             <dw:set-payload><![CDATA[%dw 1.0
@@ -152,37 +162,30 @@ payload]]></dw:set-payload>
 			payload: {
 				template_type: "list",
 				top_element_style: "compact",
-				elements:[
+				elements: payload.products map
 					{
-						title: "Anypoint Smart Slim Micro Stripe Shirt",
-						image_url: "https://launderkart.com/wp-content/uploads/2016/07/Shirt.jpg",
-						subtitle: "Quantity: $(payload.products[0].quantity)\n" ++ "Price: $(payload.products[0].price)",
+						title: $.productName,
+						subtitle: "Quantity: $($.quantity)",
 						buttons: [{
 							title: "Product Details",
 							type: "web_url",
-							url: payload.products[0].url,
+							url: ("http://anypoint-store-webportal-dev.surge.sh/product/" ++ $.productId),
 							webview_height_ratio: "tall"
 							}]
-					},	
-					{
-						title: "Men's Chino Jogger Pants",
-						image_url: "https://images-na.ssl-images-amazon.com/images/I/61hUUA%2BaEQL._UX342_.jpg",
-						subtitle: "Quantity: $(payload.products[1].quantity)\n" ++ "Price: $(payload.products[1].price)",
-						buttons: [{
-							title: "Product Details",
-							type: "web_url",
-							url: payload.products[1].url,
-							webview_height_ratio: "tall"
-							}]
-					}]			
+					}			
 			}
 		}
 	}
 }]]></dw:set-payload>
         </dw:transform-message>
-    </flow>
-    <flow name="delivery-response">
-        <dw:transform-message doc:name="Response Message">
+        <http:request config-ref="Call_Send_API_Request_Configuration" path="me/messages" method="POST" doc:name="Call Facebook Send API">
+            <http:request-builder>
+                <http:query-param paramName="access_token" value="${access_token}"/>
+            </http:request-builder>
+        </http:request>
+        <set-payload value="#[flowVars.totalPrice]" doc:name="Set Payload"/>
+
+        <dw:transform-message doc:name="Response message">
             <dw:set-payload><![CDATA[%dw 1.0
 %output application/json
 ---
@@ -191,13 +194,55 @@ payload]]></dw:set-payload>
 		id: flowVars.input.entry.messaging[0].sender.id[0]
 	},
 	message: {
-	      text: "Here are your order details:\n\n" ++
+		  
+	      text: 
+	      		"\nTotal Price: $(payload.totalPrice) USD"
+		
+	}
+}]]></dw:set-payload>
+        </dw:transform-message>
+
+    </flow>
+    <flow name="delivery-response">
+        <http:request config-ref="Omnichannel_Request_Configuration" path="customers/{customerId}" method="GET" doc:name="GET/customers/{customerId}">
+            <http:request-builder>
+                <http:uri-param paramName="customerId" value="${orders.customerId}"/>
+
+
+            </http:request-builder>
+        </http:request>
+        <logger message="#[payload:java.lang.String]" level="INFO" doc:name="Logger"/>
+        <dw:transform-message doc:name="intermediate mapping">
+            <dw:input-payload doc:sample="messageData.json" mimeType="application/json"/>
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+payload.deliveryAddresses filter ($.type == 'SHIPPING') map {	
+	address: $.address ++ "\n" 
+	++ $.postalCode ++ ", " ++ $.city ++ "\n" ++ 
+    $.state ++ "," ++ $.country
+}
+]]></dw:set-payload>
+        </dw:transform-message>
+
+        <dw:transform-message doc:name="Response Message" >
+        <dw:input-payload doc:sample="messageData.json" mimeType="application/json"/>
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+	recipient: {
+		id: flowVars.input.entry.messaging[0].sender.id[0]
+	},
+	message: {
+		  
+	      text: 
+	      		"Here are your order details:\n\n" ++
 	      		"Arriving: Thursday, June 8\n" ++
 	      		"Carrier: USPS\n" ++
-	      		"Shipped to: Anton Kravchenko\n" ++ 
-	       		"   77 Geary Street, #400, MuleSoft\n" ++
-		   		"   94108, San Francisco\n" ++
-		   		"   California, USA\n\n"
+	      		"Shipped to: Anton Kravchenko\n" ++
+	      		 "$(payload[0].address)"
+		
 	}
 }]]></dw:set-payload>
         </dw:transform-message>
@@ -229,9 +274,14 @@ payload]]></dw:set-payload>
         </http:request>
         <logger message="#[payload:java.lang.String]" level="INFO" doc:name="Logger"/>
     </flow>
+
 	<flow name="facebook-bot-site">
         <http:listener config-ref="HTTPS_Listener_Configuration" path="/" doc:name="HTTP"/>
         <logger message="#[payload]" level="INFO" doc:name="Logger"/>
         <set-payload value="Hello Facebook Bot!" doc:name="Set Payload"/>
     </flow>
+
+
+
+
 </mule>
