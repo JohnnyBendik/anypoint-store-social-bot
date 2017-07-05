@@ -97,7 +97,7 @@ payload]]></dw:set-payload>
 		id: payload.entry.messaging[0].sender.id[0]
 	},
 	message: {
-		text: "Hi, Anton Kravchenko\n How can we help you today?" when payload.entry.messaging[0].message.text[0] !=null otherwise 'No Message'
+		text: "Hi, How can we help you today?" when payload.entry.messaging[0].message.text[0] !=null otherwise 'No Message'
 	}
 }]]></dw:set-payload>
         </dw:transform-message>
@@ -238,9 +238,11 @@ payload.deliveryAddresses filter ($.type == 'SHIPPING') map {
 		  
 	      text: 
 	      		"Here are your order details:\n\n" ++
-	      		"Arriving: Thursday, June 8\n" ++
+	      		"Arriving: " ++ 
+	      		(now + |P2D|) as :string {format: "EEEE, MMM d"} ++
+				"\n" ++
 	      		"Carrier: USPS\n" ++
-	      		"Shipped to: Anton Kravchenko\n" ++
+	      		"Shipped to:\n" ++
 	      		 "$(payload[0].address)"
 		
 	}
