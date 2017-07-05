@@ -169,7 +169,7 @@ using(order = payload[0])
 						buttons: [{
 							title: "Product Details",
 							type: "web_url",
-							url: ("http://anypoint-store-webportal-dev.surge.sh/product/" ++ $.productId),
+							url: p('anypoint.store.url') ++ "/product/" ++ $.productId,
 							webview_height_ratio: "tall"
 							}]
 					}			
