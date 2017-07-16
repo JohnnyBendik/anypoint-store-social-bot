@@ -1,36 +1,90 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:json="http://www.mulesoft.org/schema/mule/json"
+<mule xmlns:cors="http://www.mulesoft.org/schema/mule/cors"  
+	xmlns:context="http://www.springframework.org/schema/context" 
+	xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" 
+	xmlns:objectstore="http://www.mulesoft.org/schema/mule/objectstore"
+	xmlns:json="http://www.mulesoft.org/schema/mule/json"
 	xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw"
-	xmlns:tls="http://www.mulesoft.org/schema/mule/tls"
-	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" 
+	xmlns="http://www.mulesoft.org/schema/mule/core" 
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
 	xmlns:spring="http://www.springframework.org/schema/beans" 
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
-http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
-http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd
-http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
-http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
 http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
-http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
+http://www.mulesoft.org/schema/mule/objectstore http://www.mulesoft.org/schema/mule/objectstore/current/mule-objectstore.xsd
+http://www.mulesoft.org/schema/mule/cors http://www.mulesoft.org/schema/mule/cors/current/mule-cors.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
+http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-current.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd">
     
-    <http:listener-config name="HTTPS_Listener_Configuration"  protocol="HTTPS"    host="0.0.0.0" port="8082" doc:name="HTTP Listener Configuration" >
-        <tls:context>
-            <tls:key-store type="jks" path="${keystore.location}" keyPassword="${key.password}" password="${keystore.password}" alias= "${key.alias}"/>
-        </tls:context>
+    <http:listener-config name="HTTPS_Listener_Configuration"      host="0.0.0.0" port="${https.port}" doc:name="HTTP Listener Configuration" >
+<!--         <tls:context> -->
+<!--             <tls:key-store type="jks" path="${keystore.location}" keyPassword="${key.password}" password="${keystore.password}" alias= "${key.alias}"/> -->
+<!--         </tls:context> -->
     </http:listener-config>
     <http:request-config name="Call_Send_API_Request_Configuration" protocol="HTTPS" host="graph.facebook.com" port="443" doc:name="HTTP Request Configuration" basePath="/">
-        <tls:context>
-            <tls:key-store type="jks" path="${keystore.location}" keyPassword="${key.password}" password="${keystore.password}" alias= "${key.alias}"/>
-        </tls:context>
+<!--         <tls:context> -->
+<!--             <tls:key-store type="jks" path="${keystore.location}" keyPassword="${key.password}" password="${keystore.password}" alias= "${key.alias}"/> -->
+<!--         </tls:context> -->
     </http:request-config>
-    <http:request-config name="Omnichannel_Request_Configuration" host="${omni-experience-api.host}" port="${omni-experience-api.port}" basePath="${omni-experience-api.baseUrl}" doc:name="HTTP Request Configuration" >    	
-    </http:request-config>	
-	<flow name="webhook-flow">
-        <http:listener config-ref="HTTPS_Listener_Configuration" path="/webhook" doc:name="HTTP"/>
+    
+    <http:request-config name="Omnichannel_Request_Configuration" doc:name="HTTP Request Configuration"
+	    host="${omni-experience-api.host}" 
+	    port="${omni-experience-api.port}" 
+	    basePath="${omni-experience-api.baseUrl}" /> 
+	    
+    <context:property-placeholder location="common.properties,mule.${mule.env}.properties"/>
+    
+    <objectstore:config name="application_data" partition="_defaultUserObjectStore" persistent="true" objectStore-ref="_defaultUserObjectStore" doc:name="ObjectStore: Connector"/>
+    
+    
+    <configuration doc:name="Configuration">
+     <expression-language>
+         <global-functions>
+             def decode64(value) {
+             	 byte[] decoded = java.util.Base64.getUrlDecoder()
+                                                  .decode(value);
+             	 return new String(decoded, "UTF-8");
+             }
+             
+             def encode64(value) {
+                 return java.util.Base64.getUrlEncoder()
+                                        .withoutPadding()
+                                        .encodeToString(value.getBytes("UTF-8"));
+             }
+             
+             def toUrlSafeCustomerId(value) {
+                 return value.replace('|', '_');
+             }
+         </global-functions>
+     </expression-language>
+ </configuration>
+    
+    <cors:config name="Cors_Configuration" doc:name="Cors Configuration">
+	<cors:origins>
+		<cors:origin url="*" accessControlMaxAge="30">
+			<cors:methods>
+				<cors:method>GET</cors:method>
+				<cors:method>POST</cors:method>
+				<cors:method>OPTIONS</cors:method>
+			</cors:methods>
+<!-- 			<cors:headers> -->
+<!-- 				<cors:header>Origin</cors:header> -->
+<!-- 			</cors:headers> -->
+		</cors:origin>
+	</cors:origins>
+</cors:config>
+
+    <flow name="webhook-flow">
+        <http:listener config-ref="HTTPS_Listener_Configuration" path="/webhook" doc:name="/webhook"/>
+        <logger message="#[message.payloadAs(java.lang.String)]" level="INFO" doc:name="Log input"/>
         <choice doc:name="Operation?">
             <when expression="#[message.inboundProperties.'http.method' == 'POST']">
-                <dw:transform-message doc:name="transform input">
+                <dw:transform-message doc:name="transform input to java">
                     <dw:set-payload><![CDATA[%dw 1.0
 %output application/java
 ---
@@ -38,9 +92,9 @@ payload]]></dw:set-payload>
                 </dw:transform-message>
                 <choice doc:name="Choice">
                     <when expression="#[!(payload.entry[0].messaging[0].message == null)]">
-                        <choice doc:name="How is your response on message?">
+                        <choice doc:name="What action to perform?">
                             <when expression="#[payload.entry[0].messaging[0].message.text.contains(&quot;order&quot;)]">
-                                <flow-ref name="orders-response" doc:name="orders-response"/>
+                                <flow-ref name="order-response" doc:name="order-response"/>
                             </when>
                             <when expression="#[payload.entry[0].messaging[0].message.text.contains(&quot;Hi&quot;)]">
                                 <flow-ref name="greeting-response" doc:name="greeting-response"/>
@@ -68,9 +122,58 @@ payload]]></dw:set-payload>
         </choice>
         
     </flow>
+    <flow name="after-login-flow">
+        <http:listener config-ref="HTTPS_Listener_Configuration" path="/callback" doc:name="HTTP" allowedMethods="GET,OPTIONS,POST"/>
+        <cors:validate config-ref="Cors_Configuration" publicResource="true" acceptsCredentials="false" doc:name="CORS Validate"/>
+        <json:json-to-object-transformer returnClass="java.util.Map" doc:name="JSON to Object" mimeType="application/java"/>
+        <logger  level="INFO" doc:name="Log input" message="#[message.payloadAs(java.lang.String)]"/>
+        <dw:transform-message doc:name="extract useful data">
+            <dw:input-payload doc:sample="sample_data/json.json"/>
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+%var accessTokenPayloadBase64UrlEncoded = (payload.access_token splitBy '.')[1]
+%var accessTokenPayloadString = decode64(accessTokenPayloadBase64UrlEncoded)
+%var accessTokenPayload = read(accessTokenPayloadString, 'application/json')
+
+%var idTokenPayloadBase64UrlEncoded = (payload.id_token splitBy '.')[1]
+%var idTokenPayloadString = decode64(idTokenPayloadBase64UrlEncoded)
+%var idTokenPayload = read(idTokenPayloadString, 'application/json')
+---
+{
+	customerId: toUrlSafeCustomerId(accessTokenPayload.sub),
+	psid: read(decode64(payload.state), 'application/json').psid,
+	action: read(decode64(payload.state), 'application/json').action,
+	accessToken: payload.access_token,
+	name: idTokenPayload.name,
+	givenName: idTokenPayload.given_name,
+	lastName: idTokenPayload.family_name
+	
+}]]></dw:set-payload>
+        </dw:transform-message>
+        <objectstore:store config-ref="application_data" key="#[payload.psid]" value-ref="#[dw(' payload - &quot;action&quot; ')]" overwrite="true" doc:name="save customerId under psid key"/>
+        <logger message="#[message.payloadAs(java.lang.String)]" level="INFO" doc:name="Find real order info as we now have customerId"/>
+        <dw:transform-message doc:name="Prepare message to send to FB">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+	recipient: {
+		id: payload.psid
+	},
+	message: {
+		text: "Thank you for linking your account, let me now show you your last order..."
+	}
+}]]></dw:set-payload>
+        </dw:transform-message>
+        <http:request config-ref="Call_Send_API_Request_Configuration" path="me/messages" method="POST" doc:name="Call Facebook Send API">
+            <http:request-builder>
+                <http:query-param paramName="access_token" value="${access_token}"/>
+            </http:request-builder>
+        </http:request>
+    </flow>
     <flow name="echo-response">
         <json:object-to-json-transformer doc:name="Object to JSON"/>
-        <dw:transform-message metadata:id="6919ff9e-25d3-4988-8d16-4921f6ef7e27" doc:name="Response Message">
+        <dw:transform-message doc:name="Response Message" >
             <dw:input-payload mimeType="application/json"/>
             <dw:set-payload><![CDATA[%dw 1.0
 %output application/json
@@ -85,9 +188,9 @@ payload]]></dw:set-payload>
 }]]></dw:set-payload>
         </dw:transform-message>
     </flow>
-     <flow name="greeting-response">
+    <flow name="greeting-response">
         <json:object-to-json-transformer doc:name="Object to JSON"/>
-        <dw:transform-message metadata:id="6919ff9e-25d3-4988-8d16-4921f6ef7e27" doc:name="Response Message">
+        <dw:transform-message doc:name="Response Message">
             <dw:input-payload mimeType="application/json"/>
             <dw:set-payload><![CDATA[%dw 1.0
 %output application/json
@@ -102,8 +205,8 @@ payload]]></dw:set-payload>
 }]]></dw:set-payload>
         </dw:transform-message>
     </flow>
-    <flow name="orders-response">
-        <set-variable variableName="input" value="#[payload]" doc:name="Variable"/>
+    <flow name="orders-response-mocked">
+		<set-variable variableName="input" value="#[payload]" doc:name="Variable"/>
         <json:object-to-json-transformer doc:name="Object to JSON"/>
         <flow-ref name="delivery-response" doc:name="delivery-response"/>
         <flow-ref name="list-response" doc:name="list-response"/>
@@ -201,7 +304,7 @@ using(order = payload[0])
 	}
 }]]></dw:set-payload>
         </dw:transform-message>
-
+		
     </flow>
     <flow name="delivery-response">
         <http:request config-ref="Omnichannel_Request_Configuration" path="customers/{customerId}" method="GET" doc:name="GET/customers/{customerId}">
@@ -213,7 +316,6 @@ using(order = payload[0])
         </http:request>
         <logger message="#[payload:java.lang.String]" level="INFO" doc:name="Logger"/>
         <dw:transform-message doc:name="intermediate mapping">
-            <dw:input-payload doc:sample="messageData.json" mimeType="application/json"/>
             <dw:set-payload><![CDATA[%dw 1.0
 %output application/json
 ---
@@ -226,7 +328,6 @@ payload.deliveryAddresses filter ($.type == 'SHIPPING') map {
         </dw:transform-message>
 
         <dw:transform-message doc:name="Response Message" >
-        <dw:input-payload doc:sample="messageData.json" mimeType="application/json"/>
             <dw:set-payload><![CDATA[%dw 1.0
 %output application/json
 ---
@@ -275,6 +376,66 @@ payload.deliveryAddresses filter ($.type == 'SHIPPING') map {
             </http:request-builder>
         </http:request>
         <logger message="#[payload:java.lang.String]" level="INFO" doc:name="Logger"/>
+    </flow>
+    <flow name="order-response">
+        <logger level="INFO" doc:name="payload contains webhook data" message="#[message.payloadAs(java.lang.String)]"/>
+        <set-variable variableName="input" value="#[payload]" doc:name="save to var input"/>
+        <set-variable variableName="psid" value="#[payload.entry[0].messaging[0].sender.id]" doc:name="var psid"/>
+        <objectstore:contains config-ref="application_data" key="#[flowVars.psid]" doc:name="Check presence of customer data by PSID"/>
+        <choice doc:name="Is messenger user record present?">
+            <when expression="#[payload == true]">
+                <objectstore:retrieve config-ref="application_data" key="#[flowVars.psid]" targetProperty="customerData" doc:name="Retrieve by PSID to var customerData"/>
+                <dw:transform-message doc:name="Reply with order (to do)">
+                    <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+	recipient: {
+		id: flowVars.input.entry.messaging[0].sender.id[0]
+	},
+	message: {
+		  
+	      text: "Now I'm going to show you your orders"
+	      		
+		
+	}
+}]]></dw:set-payload>
+                </dw:transform-message>
+            </when>
+            <otherwise>
+                <logger level="INFO" doc:name="User must login first"/>
+                <set-variable variableName="state" value="#[java.util.Base64.getUrlEncoder().encodeToString('{&quot;psid&quot;:&quot;12345&quot;,&quot;action&quot;:&quot;order&quot;}'.getBytes(&quot;UTF-8&quot;))]" doc:name="var state"/>
+                <dw:transform-message doc:name="Reply with login link">
+                    <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+%var stateRaw = {
+	psid: flowVars.input.entry.messaging[0].sender.id[0],
+	action: "order"
+}
+%var stateString = write(stateRaw, "application/json")
+%var stateBase64UrlEncoded = encode64(stateString)
+%var loginUrl = p('user.login.url')
+---
+{
+	recipient: {
+		id: flowVars.input.entry.messaging[0].sender.id[0]
+	},
+	message: {
+		  
+	      text: "Sure, for this action though you must login to Aypoint Store first.\n" ++ 
+	      "Please follow this link: $(loginUrl)?origin=bot&state=$(stateBase64UrlEncoded)"
+	      		
+		
+	}
+}]]></dw:set-payload>
+                </dw:transform-message>
+<!--                 <http:request config-ref="Call_Send_API_Request_Configuration" path="me/messages" method="POST" doc:name="Send login link"> -->
+<!--                     <http:request-builder> -->
+<!--                         <http:query-param paramName="access_token" value="${access_token}"/> -->
+<!--                     </http:request-builder> -->
+<!--                 </http:request> -->
+            </otherwise>
+        </choice>
     </flow>
 
 	<flow name="facebook-bot-site">

@@ -1,19 +1,23 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+
+	<parent>
+		<groupId>org.mule.templates</groupId>
+		<artifactId>templates-tooling-parent-pom</artifactId>
+		<version>1.3.9</version>
+	</parent>
 
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>org.mule.templates</groupId>
 	<artifactId>anypoint-store-social-bot</artifactId>
-    <version>1.3.0-SNAPSHOT</version>
-    <packaging>mule</packaging>
+	<version>1.3.0-SNAPSHOT</version>
+	<packaging>mule</packaging>
 	<name>anypoint-store-social-bot</name>
 
-    <properties>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-
-		<mule.version>3.8.4</mule.version>
-    	<mule.tools.version>1.2</mule.tools.version>
+	<properties>
+		<mule.tools.version>1.2</mule.tools.version>
+		<skip.readme.generation>true</skip.readme.generation>
 	</properties>
 
 	<build>
@@ -24,7 +28,13 @@
 				<version>${mule.tools.version}</version>
 				<extensions>true</extensions>
 				<configuration>
-                    <copyToAppsDirectory>true</copyToAppsDirectory>
+					<copyToAppsDirectory>true</copyToAppsDirectory>
+					<inclusions>
+						<inclusion>
+							<groupId>org.mule.modules</groupId>
+							<artifactId>mule-module-objectstore</artifactId>
+						</inclusion>
+					</inclusions>
 				</configuration>
 			</plugin>
 			<plugin>
@@ -59,44 +69,35 @@
 
 	<!-- Mule Dependencies -->
 	<dependencies>
-    	<dependency>
-            <groupId>org.mule.modules</groupId>
-            <artifactId>mule-module-http</artifactId>
-            <version>${mule.version}</version>
-            <scope>provided</scope>
-    	</dependency>
-    	<dependency>
-            <groupId>com.mulesoft.weave</groupId>
-            <artifactId>mule-plugin-weave</artifactId>
-            <version>${mule.version}</version>
-            <scope>provided</scope>
-        </dependency>
-    </dependencies>
-
-	<repositories>
-          <repository>
-            <id>Central</id>
-            <name>Central</name>
-            <url>http://repo1.maven.org/maven2/</url>
-            <layout>default</layout>
-        </repository>
-        <repository>
-            <id>mulesoft-releases</id>
-            <name>MuleSoft Releases Repository</name>
-            <url>http://repository.mulesoft.org/releases/</url>
-            <layout>default</layout>
-        </repository>
-    </repositories>
-    <pluginRepositories>
-        <pluginRepository>
-            <id>mulesoft-release</id>
-            <name>mulesoft release repository</name>
-            <layout>default</layout>
-            <url>http://repository.mulesoft.org/releases/</url>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </pluginRepository>
-    </pluginRepositories>
+		<dependency>
+			<groupId>org.mule.modules</groupId>
+			<artifactId>mule-module-http</artifactId>
+			<version>${mule.version}</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.mulesoft.weave</groupId>
+			<artifactId>mule-plugin-weave</artifactId>
+			<version>${mule.version}</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.mule.modules</groupId>
+			<artifactId>mule-module-objectstore</artifactId>
+			<version>1.3.3</version>
+		</dependency>
+		<dependency>
+			<groupId>org.mule.modules</groupId>
+			<artifactId>mule-module-spring-config</artifactId>
+			<version>${mule.version}</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.mulesoft.anypoint</groupId>
+			<artifactId>mule-module-cors-gw</artifactId>
+			<version>${mule.version}</version>
+			<scope>provided</scope>
+		</dependency>
+	</dependencies>
 
 </project>
