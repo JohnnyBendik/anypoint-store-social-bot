@@ -39,7 +39,7 @@ http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/cor
 	    
     <context:property-placeholder location="common.properties,mule.${mule.env}.properties"/>
     
-    <objectstore:config name="application_data" partition="_defaultUserObjectStore" persistent="true" objectStore-ref="_defaultUserObjectStore" doc:name="ObjectStore: Connector"/>
+    <objectstore:config name="application_data" partition="_defaultUserObjectStore"  objectStore-ref="_defaultUserObjectStore" doc:name="ObjectStore: Connector" persistent="true"/>
     
     
     <configuration doc:name="Configuration">
@@ -126,7 +126,6 @@ payload]]></dw:set-payload>
         <http:listener config-ref="HTTPS_Listener_Configuration" path="/callback" doc:name="HTTP" allowedMethods="GET,OPTIONS,POST"/>
         <cors:validate config-ref="Cors_Configuration" publicResource="true" acceptsCredentials="false" doc:name="CORS Validate"/>
         <json:json-to-object-transformer returnClass="java.util.Map" doc:name="JSON to Object" mimeType="application/java"/>
-        <logger  level="INFO" doc:name="Log input" message="#[message.payloadAs(java.lang.String)]"/>
         <dw:transform-message doc:name="extract useful data">
             <dw:input-payload doc:sample="sample_data/json.json"/>
             <dw:set-payload><![CDATA[%dw 1.0
@@ -205,59 +204,42 @@ payload]]></dw:set-payload>
 }]]></dw:set-payload>
         </dw:transform-message>
     </flow>
-    <flow name="orders-response-mocked">
-		<set-variable variableName="input" value="#[payload]" doc:name="Variable"/>
-        <json:object-to-json-transformer doc:name="Object to JSON"/>
-        <flow-ref name="delivery-response" doc:name="delivery-response"/>
+    <flow name="create-orders-response">
+
         <flow-ref name="list-response" doc:name="list-response"/>
 
 
         <http:request config-ref="Omnichannel_Request_Configuration" path="/customers/{customerId}/orders" method="GET" doc:name="GET /customers/{customerId}/orders">
             <http:request-builder>
-                <http:uri-param paramName="customerId" value="${orders.customerId}"/>
+                <http:uri-param paramName="customerId" value="#[flowVars.customerData.customerId]"/>
+
 
             </http:request-builder>
         </http:request>
-
-
-        <dw:transform-message doc:name="intermediate mapping">
-            <dw:input-payload/>
-            <dw:set-payload><![CDATA[%dw 1.0
-%output application/json
+        <json:json-to-object-transformer doc:name="JSON to Object"/>
+        <set-variable variableName="ordersSize" value="#[payload.toArray().length]" doc:name="Set ordersSize"/>
+        <dw:transform-message doc:name="Extract data about last order">
+            <dw:set-variable variableName="orderItems"><![CDATA[%dw 1.0
+%output application/java
 ---
-using(order = payload[0])
-{
-	orderId: order.id,
-	totalPrice: order.price,
-	products: order.orderItems map {
-		variantId: $.orderItemId,
-		(productId: "eb8c8ca7-3c42-4489-a820-3aa138430b75" when ($.orderItemId == "88668866-2c6d-4fa6-9e17-4b2c42e0f051") otherwise {
-				productId: "cd67cd8a-8901-48c5-890b-0a21f4a0f8ad"
-			}),
-		productName: $.productName,
-		quantity: $.quantity
-	}
-	
-	
-}
-]]></dw:set-payload>
+payload[flowVars.ordersSize - 1].orderItems
+]]></dw:set-variable>
             <dw:set-variable variableName="totalPrice"><![CDATA[%dw 1.0
-%output application/json
+%output application/java
 ---
-{
-	totalPrice: payload[0].price
-}]]></dw:set-variable>
+payload[flowVars.ordersSize - 1].price]]></dw:set-variable>
         </dw:transform-message>
 
-        <logger message="#[payload:java.lang.String]" level="INFO" doc:name="Logger"/>
-        <dw:transform-message doc:name="Response Message" >
-        <dw:input-payload doc:sample="messageData.json" mimeType="application/json"/>
-            <dw:set-payload><![CDATA[%dw 1.0
+        <choice doc:name="Choice">
+            <when expression="#[orderItems.toArray().length &gt; 1]">
+                <dw:transform-message doc:name="Response Message">
+                    <dw:input-payload doc:sample="messageData.json" mimeType="application/json"/>
+                    <dw:set-payload><![CDATA[%dw 1.0
 %output application/json
 ---
 {
 	recipient: {
-		id: flowVars.input.entry.messaging[0].sender.id[0]
+		id: flowVars.customerData.psid
 	},
 	message:{
       attachment: {
@@ -265,19 +247,74 @@ using(order = payload[0])
 			payload: {
 				template_type: "list",
 				top_element_style: "compact",
-				elements: payload.products map
+				elements: flowVars.orderItems map
 					{
 						title: $.productName,
 						subtitle: "Quantity: $($.quantity)",
 						buttons: [{
 							title: "Product Details",
 							type: "web_url",
-							url: p('anypoint.store.url') ++ "/product/" ++ $.productId,
+							url: p('anypoint.store.url') ++ "/product/" ++ "1",
 							webview_height_ratio: "tall"
 							}]
 					}			
 			}
 		}
+	}
+}]]></dw:set-payload>
+                </dw:transform-message>
+            </when>
+            <otherwise>
+
+                <dw:transform-message doc:name="Transform Message">
+                    <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+	recipient: {
+		id: flowVars.customerData.psid
+	},
+"message":{
+    "attachment":{
+      "type":"template",
+      "payload":{
+        "template_type":"button",
+        "text": "Product name: " ++ flowVars.orderItems[0].productName ++ "\n" ++ "Quantity:" ++ flowVars.orderItems[0].quantity,
+        "buttons":[
+          {
+            "type":"web_url",
+            "url":p('anypoint.store.url') ++ "/product/" ++ "1",
+            "title": "Product Details"
+          }
+        ]
+      }
+    }
+  }
+}]]></dw:set-payload>
+                </dw:transform-message>
+            </otherwise>
+        </choice>
+
+        <http:request config-ref="Call_Send_API_Request_Configuration" path="me/messages" method="POST" doc:name="Call Facebook Send API">
+            <http:request-builder>
+                <http:query-param paramName="access_token" value="${access_token}"/>
+            </http:request-builder>
+        </http:request>
+
+
+        <dw:transform-message doc:name="Response message">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+	recipient: {
+		id: flowVars.customerData.psid
+	},
+	message: {
+		  
+	      text: 
+	      		"\nTotal Price: " ++ flowVars.totalPrice
+		
 	}
 }]]></dw:set-payload>
         </dw:transform-message>
@@ -286,35 +323,18 @@ using(order = payload[0])
                 <http:query-param paramName="access_token" value="${access_token}"/>
             </http:request-builder>
         </http:request>
-        <set-payload value="#[flowVars.totalPrice]" doc:name="Set Payload"/>
-
-        <dw:transform-message doc:name="Response message">
-            <dw:set-payload><![CDATA[%dw 1.0
-%output application/json
----
-{
-	recipient: {
-		id: flowVars.input.entry.messaging[0].sender.id[0]
-	},
-	message: {
-		  
-	      text: 
-	      		"\nTotal Price: $(payload.totalPrice) USD"
-		
-	}
-}]]></dw:set-payload>
-        </dw:transform-message>
 		
     </flow>
     <flow name="delivery-response">
         <http:request config-ref="Omnichannel_Request_Configuration" path="customers/{customerId}" method="GET" doc:name="GET/customers/{customerId}">
             <http:request-builder>
-                <http:uri-param paramName="customerId" value="${orders.customerId}"/>
+                <http:uri-param paramName="customerId" value="#[flowVars.customerData.customerId]"/>
+
 
 
             </http:request-builder>
         </http:request>
-        <logger message="#[payload:java.lang.String]" level="INFO" doc:name="Logger"/>
+        <logger message="Customer Data #[payload:java.lang.String]" level="INFO" doc:name="Logger"/>
         <dw:transform-message doc:name="intermediate mapping">
             <dw:set-payload><![CDATA[%dw 1.0
 %output application/json
@@ -333,7 +353,7 @@ payload.deliveryAddresses filter ($.type == 'SHIPPING') map {
 ---
 {
 	recipient: {
-		id: flowVars.input.entry.messaging[0].sender.id[0]
+		id: flowVars.customerData.psid
 	},
 	message: {
 		  
@@ -354,7 +374,7 @@ payload.deliveryAddresses filter ($.type == 'SHIPPING') map {
                 <http:query-param paramName="access_token" value="${access_token}"/>
             </http:request-builder>
         </http:request>
-        <logger message="#[payload:java.lang.String]" level="INFO" doc:name="Logger"/>
+
     </flow>
     <flow name="list-response">
         <dw:transform-message doc:name="Response Message">
@@ -363,7 +383,7 @@ payload.deliveryAddresses filter ($.type == 'SHIPPING') map {
 ---
 {
 	recipient: {
-		id: flowVars.input.entry.messaging[0].sender.id[0]
+		id: flowVars.customerData.psid
 	},
 	message: {
 	      text: "Below is the list of ordered products:\n"
@@ -385,25 +405,27 @@ payload.deliveryAddresses filter ($.type == 'SHIPPING') map {
         <choice doc:name="Is messenger user record present?">
             <when expression="#[payload == true]">
                 <objectstore:retrieve config-ref="application_data" key="#[flowVars.psid]" targetProperty="customerData" doc:name="Retrieve by PSID to var customerData"/>
-                <dw:transform-message doc:name="Reply with order (to do)">
+
+                <flow-ref name="delivery-response" doc:name="delivery-response"/>
+                <flow-ref name="create-orders-response" doc:name="create-orders-response"/>
+                <dw:transform-message doc:name="Reply">
                     <dw:set-payload><![CDATA[%dw 1.0
 %output application/json
 ---
 {
 	recipient: {
-		id: flowVars.input.entry.messaging[0].sender.id[0]
+		id: flowVars.psid
 	},
 	message: {
 		  
-	      text: "Now I'm going to show you your orders"
+	      text: "Thank you!"
 	      		
-		
 	}
 }]]></dw:set-payload>
                 </dw:transform-message>
             </when>
             <otherwise>
-                <logger level="INFO" doc:name="User must login first"/>
+                <logger level="INFO" doc:name="User must login first" message="Going to log in user"/>
                 <set-variable variableName="state" value="#[java.util.Base64.getUrlEncoder().encodeToString('{&quot;psid&quot;:&quot;12345&quot;,&quot;action&quot;:&quot;order&quot;}'.getBytes(&quot;UTF-8&quot;))]" doc:name="var state"/>
                 <dw:transform-message doc:name="Reply with login link">
                     <dw:set-payload><![CDATA[%dw 1.0
