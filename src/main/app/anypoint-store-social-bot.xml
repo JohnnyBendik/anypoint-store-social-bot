@@ -228,12 +228,12 @@ payload]]></dw:set-payload>
                     <dw:set-variable variableName="orderItems"><![CDATA[%dw 1.0
 %output application/java
 ---
-payload[flowVars.ordersSize - 1].orderItems
+payload[0].orderItems
 ]]></dw:set-variable>
                     <dw:set-variable variableName="totalPrice"><![CDATA[%dw 1.0
 %output application/java
 ---
-payload[flowVars.ordersSize - 1].price]]></dw:set-variable>
+payload[0].price]]></dw:set-variable>
                 </dw:transform-message>
                 <flow-ref name="list-response" doc:name="list-response"/>
                 <flow-ref name="delivery-response" doc:name="delivery-response"/>
