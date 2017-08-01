@@ -359,19 +359,29 @@ payload[0].price]]></dw:set-variable>
         </http:request>
         <logger message="Customer Data #[payload:java.lang.String]" level="INFO" doc:name="Logger"/>
         <dw:transform-message doc:name="intermediate mapping">
+            <dw:input-payload doc:sample="sample_data\json_1.json"/>
             <dw:set-payload><![CDATA[%dw 1.0
-%output application/json
+%output application/java
 ---
 payload.deliveryAddresses filter ($.type == 'SHIPPING') map {	
 	address: $.address ++ "\n" 
 	++ $.postalCode ++ ", " ++ $.city ++ "\n" ++ 
     $.state ++ "," ++ $.country
-}
-]]></dw:set-payload>
+ when (
+	$.address != null and
+	$.postalCode != null and
+	$.city != null and
+	$.state != null and
+	$.country != null
+	)
+otherwise null
+}]]></dw:set-payload>
         </dw:transform-message>
 
-        <dw:transform-message doc:name="Response Message" >
-            <dw:set-payload><![CDATA[%dw 1.0
+        <choice doc:name="Choice">
+            <when expression="#[payload[0].address != null]">
+                <dw:transform-message doc:name="Response Message">
+                    <dw:set-payload><![CDATA[%dw 1.0
 %output application/json
 ---
 {
@@ -387,16 +397,22 @@ payload.deliveryAddresses filter ($.type == 'SHIPPING') map {
 				"\n" ++
 	      		"Carrier: USPS\n" ++
 	      		"Shipped to:\n" ++
-	      		 "$(payload[0].address)"
+	      		 payload[0].address
 		
 	}
 }]]></dw:set-payload>
-        </dw:transform-message>
-        <http:request config-ref="Call_Send_API_Request_Configuration" path="me/messages" method="POST" doc:name="Call Facebook Send API">
-            <http:request-builder>
-                <http:query-param paramName="access_token" value="${access_token}"/>
-            </http:request-builder>
-        </http:request>
+                </dw:transform-message>
+                <http:request config-ref="Call_Send_API_Request_Configuration" path="me/messages" method="POST" doc:name="Call Facebook Send API">
+                    <http:request-builder>
+                        <http:query-param paramName="access_token" value="${access_token}"/>
+                    </http:request-builder>
+                </http:request>
+            </when>
+            <otherwise>
+                <logger message="Customer's address not found." level="INFO" doc:name="Logger"/>
+            </otherwise>
+        </choice>
+
 
     </flow>
     <flow name="list-response">
