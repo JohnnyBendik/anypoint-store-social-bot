@@ -100,6 +100,9 @@ payload]]></dw:set-payload>
                             <when expression="#[payload.entry[0].messaging[0].message.text.contains(&quot;Hi&quot;)]">
                                 <flow-ref name="greeting-response" doc:name="greeting-response"/>
                             </when>
+                            <when expression="#[payload.entry[0].messaging[0].message.text.contains(&quot;user&quot;)]">
+                                <flow-ref name="logout-response" doc:name="logout-response"/>
+                            </when>
                             <otherwise>
                                 <flow-ref name="echo-response" doc:name="echo-response"/>
                             </otherwise>
@@ -187,7 +190,7 @@ payload]]></dw:set-payload>
 		id: payload.entry.messaging[0].sender.id[0]
 	},
 	message: {
-		text: "If you want to see your orders, please write keyword:  order." when payload.entry.messaging[0].message.text[0] !=null otherwise 'No Message'
+		text: "You can ask for your last order or for authenticating a different user." when payload.entry.messaging[0].message.text[0] !=null otherwise 'No Message'
 	}
 }]]></dw:set-payload>
         </dw:transform-message>
@@ -464,6 +467,11 @@ otherwise null
             </when>
             <otherwise>
                 <logger level="INFO" doc:name="User must login first" message="Going to log in user"/>
+				<flow-ref name="login-response" doc:name="login-response"/>
+            </otherwise>
+        </choice>
+    </flow>
+	<sub-flow name="login-response">
                 <set-variable variableName="state" value="#[java.util.Base64.getUrlEncoder().encodeToString('{&quot;psid&quot;:&quot;12345&quot;,&quot;action&quot;:&quot;order&quot;}'.getBytes(&quot;UTF-8&quot;))]" doc:name="var state"/>
                 <dw:transform-message doc:name="Reply with login link">
                     <dw:set-payload><![CDATA[%dw 1.0
@@ -482,21 +490,20 @@ otherwise null
 	},
 	message: {
 		  
-	      text: "Sure, for this action though you must login to Aypoint Store first.\n" ++ 
-	      "Please follow this link: $(loginUrl)?origin=bot&state=$(stateBase64UrlEncoded)"
-	      		
-		
+	      text: "Sure, please follow this link to authenticate yourself to the Anypoint Store. This is necessary only once.\n" ++ 
+	      "$(loginUrl)?origin=bot&state=$(stateBase64UrlEncoded)"
 	}
 }]]></dw:set-payload>
                 </dw:transform-message>
-<!--                 <http:request config-ref="Call_Send_API_Request_Configuration" path="me/messages" method="POST" doc:name="Send login link"> -->
-<!--                     <http:request-builder> -->
-<!--                         <http:query-param paramName="access_token" value="${access_token}"/> -->
-<!--                     </http:request-builder> -->
-<!--                 </http:request> -->
-            </otherwise>
-        </choice>
+	</sub-flow>
+
+    <flow name="logout-response">
+        <set-variable variableName="input" value="#[payload]" doc:name="save to var input"/>
+        <set-variable variableName="psid" value="#[payload.entry[0].messaging[0].sender.id]" doc:name="var psid"/>
+        <objectstore:remove config-ref="application_data" doc:name="ObjectStore" key="#[flowVars.psid]" ignoreNotExists="true" doc:description="Remove entry for user if exists."/>
+        <flow-ref name="login-response" doc:name="login-response"/>
     </flow>
+
 
 	<flow name="facebook-bot-site">
         <http:listener config-ref="HTTPS_Listener_Configuration" path="/" doc:name="HTTP"/>
