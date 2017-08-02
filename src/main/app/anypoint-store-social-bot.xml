@@ -262,8 +262,8 @@ payload[0].orderItems
 ---
 payload[0].price]]></dw:set-variable>
                 </dw:transform-message>
-                <flow-ref name="list-response" doc:name="list-response"/>
                 <flow-ref name="delivery-response" doc:name="delivery-response"/>
+                <flow-ref name="list-response" doc:name="list-response"/>
                 <choice doc:name="Multiple order items?">
                     <when expression="#[orderItems.toArray().length &gt; 1]">
                         <dw:transform-message doc:name="Response Message">
