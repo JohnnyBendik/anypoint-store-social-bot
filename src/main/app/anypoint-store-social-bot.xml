@@ -361,7 +361,7 @@ payload[0].price]]></dw:set-variable>
 	message: {
 		  
 	      text: 
-	      		"\nYou don't have active order."
+	      		"\nYou have no active orders. If you want to check for another user, please let me know."
 	}
 }]]></dw:set-payload>
                 </dw:transform-message>
@@ -483,7 +483,7 @@ otherwise null
 	},
 	message: {
 		  
-	      text: "Thank you!"
+	      text: "Thank you for your purchase! If you want to check for another user, please let me know."
 	      		
 	}
 }]]></dw:set-payload>
