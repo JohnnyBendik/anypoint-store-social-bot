@@ -82,7 +82,7 @@ http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/
 
     <flow name="webhook-flow">
         <http:listener config-ref="HTTPS_Listener_Configuration" path="/webhook" doc:name="/webhook"/>
-        <logger message="#[message.payloadAs(java.lang.String)]" level="INFO" doc:name="Log input"/>
+        <logger message="#[message.payloadAs(java.lang.String)]" level="DEBUG" doc:name="Log webhook input"/>
         <choice doc:name="Operation?">
             <when expression="#[message.inboundProperties.'http.method' == 'POST']">
                 <dw:transform-message doc:name="transform input to java">
@@ -107,16 +107,16 @@ payload]]></dw:set-payload>
                                 <flow-ref name="echo-response" doc:name="echo-response"/>
                             </otherwise>
                         </choice>
-                        <logger message="#[payload:java.lang.String]" level="INFO" doc:name="Logger"/>
+                        <logger message="#[payload:java.lang.String]" level="DEBUG" doc:name="Log message to FB"/>
                         <http:request config-ref="Call_Send_API_Request_Configuration" path="me/messages" method="POST" doc:name="Call Facebook Send API">
                             <http:request-builder>
                                 <http:query-param paramName="access_token" value="${access_token}"/>
                             </http:request-builder>
                         </http:request>
-                        <logger message="#[payload:java.lang.String]" level="INFO" doc:name="Logger"/>
+                        <logger message="#[payload:java.lang.String]" level="DEBUG" doc:name="Log FB response"/>
                     </when>
                     <otherwise>
-                        <logger message="POSTBACK - #[payload]" level="INFO" doc:name="Logger"/>
+                        <logger message="POSTBACK - #[payload]" level="DEBUG" doc:name="Logger"/>
                     </otherwise>
                 </choice>
             </when>
@@ -384,7 +384,7 @@ payload[0].price]]></dw:set-variable>
 
             </http:request-builder>
         </http:request>
-        <logger message="Customer Data #[payload:java.lang.String]" level="INFO" doc:name="Logger"/>
+        <logger message="Customer Data #[payload:java.lang.String]" level="DEBUG" doc:name="Log customer info"/>
         <dw:transform-message doc:name="intermediate mapping">
             <dw:input-payload doc:sample="sample_data\json_1.json"/>
             <dw:set-payload><![CDATA[%dw 1.0
@@ -436,7 +436,7 @@ otherwise null
                 </http:request>
             </when>
             <otherwise>
-                <logger message="Customer's address not found." level="INFO" doc:name="Logger"/>
+                <logger message="Customer's address not found." level="ERROR" doc:name="Log Customer address not found"/>
             </otherwise>
         </choice>
 
@@ -461,10 +461,10 @@ otherwise null
                 <http:query-param paramName="access_token" value="${access_token}"/>
             </http:request-builder>
         </http:request>
-        <logger message="#[payload:java.lang.String]" level="INFO" doc:name="Logger"/>
+        <logger message="#[payload:java.lang.String]" level="DEBUG" doc:name="Log FB response"/>
     </flow>
     <flow name="order-response">
-        <logger level="INFO" doc:name="payload contains webhook data" message="#[message.payloadAs(java.lang.String)]"/>
+        <logger level="DEBUG" doc:name="Log webhook data" message="#[message.payloadAs(java.lang.String)]"/>
         <set-variable variableName="input" value="#[payload]" doc:name="save to var input"/>
         <set-variable variableName="psid" value="#[payload.entry[0].messaging[0].sender.id]" doc:name="var psid"/>
         <objectstore:contains config-ref="application_data" key="#[flowVars.psid]" doc:name="Check presence of customer data by PSID"/>
@@ -548,7 +548,7 @@ otherwise null
 
 	<flow name="facebook-bot-site">
         <http:listener config-ref="HTTPS_Listener_Configuration" path="/" doc:name="HTTP"/>
-        <logger message="#[payload]" level="INFO" doc:name="Logger"/>
+        <logger message="#[payload]" level="DEBUG" doc:name="Log input"/>
         <set-payload value="Hello Facebook Bot!" doc:name="Set Payload"/>
     </flow>
 
