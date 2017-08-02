@@ -155,9 +155,11 @@ payload]]></dw:set-payload>
         </dw:transform-message>
         <objectstore:store config-ref="application_data" key="#[payload.psid]" value-ref="#[dw(' payload - &quot;action&quot; ')]" overwrite="true" doc:name="save customerId under psid key"/>
         <set-variable variableName="customerData" value="#[payload]" doc:name="Set customerData"/>
-        <logger message="#[message.payloadAs(java.lang.String)]" level="INFO" doc:name="Find real order info as we now have customerId"/>
-        <dw:transform-message doc:name="Prepare message to send to FB">
-            <dw:set-payload><![CDATA[%dw 1.0
+        <choice doc:name="Choose action after login">
+            <when expression="#[payload.action.equals(&quot;order&quot;)]">
+                <logger message="#[message.payloadAs(java.lang.String)]" level="DEBUG" doc:name="Find real order info as we now have customerId"/>
+                <dw:transform-message doc:name="Prepare message to send to FB">
+                    <dw:set-payload><![CDATA[%dw 1.0
 %output application/json
 ---
 {
@@ -168,14 +170,36 @@ payload]]></dw:set-payload>
 		text: "Thank you for linking your account, let me now show you your last order..."
 	}
 }]]></dw:set-payload>
-        </dw:transform-message>
-        <http:request config-ref="Call_Send_API_Request_Configuration" path="me/messages" method="POST" doc:name="Call Facebook Send API">
-            <http:request-builder>
-                <http:query-param paramName="access_token" value="${access_token}"/>
-            </http:request-builder>
-        </http:request>
-        <flow-ref name="delivery-response" doc:name="delivery-response"/>
-        <flow-ref name="create-orders-response" doc:name="create-orders-response"/>
+                </dw:transform-message>
+                <http:request config-ref="Call_Send_API_Request_Configuration" path="me/messages" method="POST" doc:name="Call Facebook Send API">
+                    <http:request-builder>
+                        <http:query-param paramName="access_token" value="${access_token}"/>
+                    </http:request-builder>
+                </http:request>
+                <flow-ref name="delivery-response" doc:name="delivery-response"/>
+                <flow-ref name="create-orders-response" doc:name="create-orders-response"/>
+            </when>
+            <otherwise>
+                <dw:transform-message doc:name="Prepare logged in message">
+                    <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+	recipient: {
+		id: payload.psid
+	},
+	message: {
+		text: "Thank you for linking your account! Is there anything I can help you with?"
+	}
+}]]></dw:set-payload>
+                </dw:transform-message>
+                <http:request config-ref="Call_Send_API_Request_Configuration" path="me/messages" method="POST" doc:name="Call Facebook Send API">
+                    <http:request-builder>
+                        <http:query-param paramName="access_token" value="${access_token}"/>
+                    </http:request-builder>
+                </http:request>
+            </otherwise>
+        </choice>
 
     </flow>
     <flow name="echo-response">
@@ -467,12 +491,6 @@ otherwise null
             </when>
             <otherwise>
                 <logger level="INFO" doc:name="User must login first" message="Going to log in user"/>
-				<flow-ref name="login-response" doc:name="login-response"/>
-            </otherwise>
-        </choice>
-    </flow>
-	<sub-flow name="login-response">
-                <set-variable variableName="state" value="#[java.util.Base64.getUrlEncoder().encodeToString('{&quot;psid&quot;:&quot;12345&quot;,&quot;action&quot;:&quot;order&quot;}'.getBytes(&quot;UTF-8&quot;))]" doc:name="var state"/>
                 <dw:transform-message doc:name="Reply with login link">
                     <dw:set-payload><![CDATA[%dw 1.0
 %output application/json
@@ -495,13 +513,36 @@ otherwise null
 	}
 }]]></dw:set-payload>
                 </dw:transform-message>
-	</sub-flow>
+            </otherwise>
+        </choice>
+    </flow>
 
     <flow name="logout-response">
         <set-variable variableName="input" value="#[payload]" doc:name="save to var input"/>
         <set-variable variableName="psid" value="#[payload.entry[0].messaging[0].sender.id]" doc:name="var psid"/>
         <objectstore:remove config-ref="application_data" doc:name="ObjectStore" key="#[flowVars.psid]" ignoreNotExists="true" doc:description="Remove entry for user if exists."/>
-        <flow-ref name="login-response" doc:name="login-response"/>
+        <dw:transform-message doc:name="Reply with login link">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+%var stateRaw = {
+	psid: flowVars.input.entry.messaging[0].sender.id[0],
+	action: "logout"
+}
+%var stateString = write(stateRaw, "application/json")
+%var stateBase64UrlEncoded = encode64(stateString)
+%var loginUrl = p('user.login.url')
+---
+{
+	recipient: {
+		id: flowVars.input.entry.messaging[0].sender.id[0]
+	},
+	message: {
+		  
+	      text: "Sure, please follow this link to authenticate yourself to the Anypoint Store. This is necessary only once.\n" ++ 
+	      "$(loginUrl)?origin=bot&state=$(stateBase64UrlEncoded)"
+	}
+}]]></dw:set-payload>
+        </dw:transform-message>
     </flow>
 
 
