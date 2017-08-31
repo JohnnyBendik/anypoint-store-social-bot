@@ -1,16 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:tls="http://www.mulesoft.org/schema/mule/tls" xmlns:cors="http://www.mulesoft.org/schema/mule/cors"  
-	xmlns:context="http://www.springframework.org/schema/context" 
-	xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" 
+<mule xmlns:tls="http://www.mulesoft.org/schema/mule/tls"
+	xmlns:cors="http://www.mulesoft.org/schema/mule/cors" xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking"
 	xmlns:objectstore="http://www.mulesoft.org/schema/mule/objectstore"
-	xmlns:json="http://www.mulesoft.org/schema/mule/json"
-	xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw"
-	xmlns:http="http://www.mulesoft.org/schema/mule/http" 
-	xmlns="http://www.mulesoft.org/schema/mule/core" 
+	xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core"
 	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
-	xmlns:spring="http://www.springframework.org/schema/beans" 
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:spring="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
 http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
 http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
@@ -21,118 +18,140 @@ http://www.springframework.org/schema/context http://www.springframework.org/sch
 http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
 http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd">
-    
-    <http:listener-config name="HTTPS_Listener_Configuration" host="0.0.0.0" port="${https.port}" doc:name="HTTP Listener Configuration" protocol="HTTPS">
-        <tls:context>
-            <tls:key-store type="jks" path="${keystore.location}" keyPassword="${key.password}" password="${keystore.password}" alias= "${key.alias}"/>
-        </tls:context>
-    </http:listener-config>
-    <http:request-config name="Call_Send_API_Request_Configuration" protocol="HTTPS" host="graph.facebook.com" port="443" doc:name="HTTP Request Configuration" basePath="/">
-        <tls:context>
-            <tls:key-store type="jks" path="${keystore.location}" keyPassword="${key.password}" password="${keystore.password}" alias= "${key.alias}"/>
-        </tls:context>
-    </http:request-config>
-    
-    <http:request-config name="Omnichannel_Request_Configuration" doc:name="HTTP Request Configuration"
-	    host="${omni-experience-api.host}" 
-	    port="${omni-experience-api.port}" 
-	    basePath="${omni-experience-api.baseUrl}" /> 
-	    
-    <context:property-placeholder location="common.properties,mule.${mule.env}.properties"/>
-    
-    <objectstore:config name="application_data" partition="_defaultUserObjectStore"  objectStore-ref="_defaultUserObjectStore" doc:name="ObjectStore: Connector" persistent="true"/>
-    
-    
-    <configuration doc:name="Configuration">
-     <expression-language>
-         <global-functions>
-             def decode64(value) {
-             	 byte[] decoded = java.util.Base64.getUrlDecoder()
-                                                  .decode(value);
-             	 return new String(decoded, "UTF-8");
-             }
-             
-             def encode64(value) {
-                 return java.util.Base64.getUrlEncoder()
-                                        .withoutPadding()
-                                        .encodeToString(value.getBytes("UTF-8"));
-             }
-             
-             def toUrlSafeCustomerId(value) {
-                 return value.replace('|', '_');
-             }
-         </global-functions>
-     </expression-language>
- </configuration>
-    
-    <cors:config name="Cors_Configuration" doc:name="Cors Configuration">
-	<cors:origins>
-		<cors:origin url="*" accessControlMaxAge="30">
-			<cors:methods>
-				<cors:method>GET</cors:method>
-				<cors:method>POST</cors:method>
-				<cors:method>OPTIONS</cors:method>
-			</cors:methods>
-<!-- 			<cors:headers> -->
-<!-- 				<cors:header>Origin</cors:header> -->
-<!-- 			</cors:headers> -->
-		</cors:origin>
-	</cors:origins>
-</cors:config>
 
-    <flow name="webhook-flow">
-        <http:listener config-ref="HTTPS_Listener_Configuration" path="/webhook" doc:name="/webhook"/>
-        <logger message="#[message.payloadAs(java.lang.String)]" level="DEBUG" doc:name="Log webhook input"/>
-        <choice doc:name="Operation?">
-            <when expression="#[message.inboundProperties.'http.method' == 'POST']">
-                <dw:transform-message doc:name="transform input to java">
-                    <dw:set-payload><![CDATA[%dw 1.0
+	<http:listener-config name="HTTPS_Listener_Configuration"
+		host="0.0.0.0" port="${https.port}" doc:name="HTTP Listener Configuration"
+		protocol="HTTPS">
+		<tls:context>
+			<tls:key-store type="jks" path="${keystore.location}"
+				keyPassword="${key.password}" password="${keystore.password}" alias="${key.alias}" />
+		</tls:context>
+	</http:listener-config>
+	<http:request-config name="Call_Send_API_Request_Configuration"
+		protocol="HTTPS" host="graph.facebook.com" port="443"
+		doc:name="HTTP Request Configuration" basePath="/">
+		<tls:context>
+			<tls:key-store type="jks" path="${keystore.location}"
+				keyPassword="${key.password}" password="${keystore.password}" alias="${key.alias}" />
+		</tls:context>
+	</http:request-config>
+
+	<http:request-config name="Omnichannel_Request_Configuration"
+		doc:name="HTTP Request Configuration" host="${omni-experience-api.host}"
+		port="${omni-experience-api.port}" basePath="${omni-experience-api.baseUrl}" />
+
+	<context:property-placeholder
+		location="common.properties,mule.${mule.env}.properties" />
+
+	<objectstore:config name="application_data"
+		partition="_defaultUserObjectStore" objectStore-ref="_defaultUserObjectStore"
+		doc:name="ObjectStore: Connector" persistent="true" />
+
+
+	<configuration doc:name="Configuration">
+		<expression-language>
+			<global-functions>
+				def decode64(value) {
+				byte[] decoded = java.util.Base64.getUrlDecoder()
+				.decode(value);
+				return new String(decoded, "UTF-8");
+				}
+
+				def encode64(value) {
+				return java.util.Base64.getUrlEncoder()
+				.withoutPadding()
+				.encodeToString(value.getBytes("UTF-8"));
+				}
+
+				def toUrlSafeCustomerId(value) {
+				return value.replace('|', '_');
+				}
+			</global-functions>
+		</expression-language>
+	</configuration>
+
+	<cors:config name="Cors_Configuration" doc:name="Cors Configuration">
+		<cors:origins>
+			<cors:origin url="*" accessControlMaxAge="30">
+				<cors:methods>
+					<cors:method>GET</cors:method>
+					<cors:method>POST</cors:method>
+					<cors:method>OPTIONS</cors:method>
+				</cors:methods>
+				<!-- <cors:headers> -->
+				<!-- <cors:header>Origin</cors:header> -->
+				<!-- </cors:headers> -->
+			</cors:origin>
+		</cors:origins>
+	</cors:config>
+
+	<flow name="webhook-flow">
+		<http:listener config-ref="HTTPS_Listener_Configuration"
+			path="/webhook" doc:name="/webhook" />
+		<logger message="#[message.payloadAs(java.lang.String)]" level="DEBUG"
+			doc:name="Log webhook input" />
+		<choice doc:name="Operation?">
+			<when expression="#[message.inboundProperties.'http.method' == 'POST']">
+				<dw:transform-message doc:name="transform input to java">
+					<dw:set-payload><![CDATA[%dw 1.0
 %output application/java
 ---
 payload]]></dw:set-payload>
-                </dw:transform-message>
-                <choice doc:name="Choice">
-                    <when expression="#[!(payload.entry[0].messaging[0].message == null)]">
-                        <choice doc:name="What action to perform?">
-                            <when expression="#[payload.entry[0].messaging[0].message.text.contains(&quot;order&quot;)]">
-                                <flow-ref name="order-response" doc:name="order-response"/>
-                            </when>
-                            <when expression="#[payload.entry[0].messaging[0].message.text.contains(&quot;Hi&quot;)]">
-                                <flow-ref name="greeting-response" doc:name="greeting-response"/>
-                            </when>
-                            <when expression="#[payload.entry[0].messaging[0].message.text.contains(&quot;user&quot;)]">
-                                <flow-ref name="logout-response" doc:name="logout-response"/>
-                            </when>
-                            <otherwise>
-                                <flow-ref name="echo-response" doc:name="echo-response"/>
-                            </otherwise>
-                        </choice>
-                        <logger message="#[payload:java.lang.String]" level="DEBUG" doc:name="Log message to FB"/>
-                        <http:request config-ref="Call_Send_API_Request_Configuration" path="me/messages" method="POST" doc:name="Call Facebook Send API">
-                            <http:request-builder>
-                                <http:query-param paramName="access_token" value="${access_token}"/>
-                            </http:request-builder>
-                        </http:request>
-                        <logger message="#[payload:java.lang.String]" level="DEBUG" doc:name="Log FB response"/>
-                    </when>
-                    <otherwise>
-                        <logger message="POSTBACK - #[payload]" level="DEBUG" doc:name="Logger"/>
-                    </otherwise>
-                </choice>
-            </when>
-            <otherwise>
-                <set-payload value="#[message.inboundProperties.'http.query.params'.['hub.challenge']]" doc:name=" Respond with challenge"/>
-            </otherwise>
-        </choice>
-        
-    </flow>
-    <flow name="after-login-flow">
-        <http:listener config-ref="HTTPS_Listener_Configuration" path="/callback" doc:name="HTTP" allowedMethods="GET,OPTIONS,POST"/>
-        <cors:validate config-ref="Cors_Configuration" publicResource="true" acceptsCredentials="false" doc:name="CORS Validate"/>
-        <json:json-to-object-transformer returnClass="java.util.Map" doc:name="JSON to Object" mimeType="application/java"/>
-        <dw:transform-message doc:name="extract useful data">
-            <dw:input-payload doc:sample="sample_data/json.json"/>
-            <dw:set-payload><![CDATA[%dw 1.0
+				</dw:transform-message>
+				<choice doc:name="Choice">
+					<when expression="#[!(payload.entry[0].messaging[0].message == null)]">
+						<choice doc:name="What action to perform?">
+							<when
+								expression="#[payload.entry[0].messaging[0].message.text.contains(&quot;order&quot;)]">
+								<flow-ref name="order-response" doc:name="order-response" />
+							</when>
+							<when
+								expression="#[payload.entry[0].messaging[0].message.text.contains(&quot;Hi&quot;)]">
+								<flow-ref name="greeting-response" doc:name="greeting-response" />
+							</when>
+							<when
+								expression="#[payload.entry[0].messaging[0].message.text.contains(&quot;user&quot;)]">
+								<flow-ref name="logout-response" doc:name="logout-response" />
+							</when>
+							<otherwise>
+								<flow-ref name="echo-response" doc:name="echo-response" />
+							</otherwise>
+						</choice>
+						<logger message="#[payload:java.lang.String]" level="DEBUG"
+							doc:name="Log message to FB" />
+						<http:request config-ref="Call_Send_API_Request_Configuration"
+							path="me/messages" method="POST" doc:name="Call Facebook Send API">
+							<http:request-builder>
+								<http:query-param paramName="access_token"
+									value="${access_token}" />
+							</http:request-builder>
+						</http:request>
+						<logger message="#[payload:java.lang.String]" level="DEBUG"
+							doc:name="Log FB response" />
+					</when>
+					<otherwise>
+						<logger message="POSTBACK - #[payload]" level="DEBUG"
+							doc:name="Logger" />
+					</otherwise>
+				</choice>
+			</when>
+			<otherwise>
+				<set-payload
+					value="#[message.inboundProperties.'http.query.params'.['hub.challenge']]"
+					doc:name=" Respond with challenge" />
+			</otherwise>
+		</choice>
+
+	</flow>
+	<flow name="after-login-flow">
+		<http:listener config-ref="HTTPS_Listener_Configuration"
+			path="/callback" doc:name="HTTP" allowedMethods="GET,OPTIONS,POST" />
+		<cors:validate config-ref="Cors_Configuration"
+			publicResource="true" acceptsCredentials="false" doc:name="CORS Validate" />
+		<json:json-to-object-transformer
+			returnClass="java.util.Map" doc:name="JSON to Object" mimeType="application/java" />
+		<dw:transform-message doc:name="extract useful data">
+			<dw:set-payload><![CDATA[%dw 1.0
 %output application/java
 %var accessTokenPayloadBase64UrlEncoded = (payload.access_token splitBy '.')[1]
 %var accessTokenPayloadString = decode64(accessTokenPayloadBase64UrlEncoded)
@@ -152,14 +171,18 @@ payload]]></dw:set-payload>
 	lastName: idTokenPayload.family_name
 	
 }]]></dw:set-payload>
-        </dw:transform-message>
-        <objectstore:store config-ref="application_data" key="#[payload.psid]" value-ref="#[dw(' payload - &quot;action&quot; ')]" overwrite="true" doc:name="save customerId under psid key"/>
-        <set-variable variableName="customerData" value="#[payload]" doc:name="Set customerData"/>
-        <choice doc:name="Choose action after login">
-            <when expression="#[payload.action.equals(&quot;order&quot;)]">
-                <logger message="#[message.payloadAs(java.lang.String)]" level="DEBUG" doc:name="Find real order info as we now have customerId"/>
-                <dw:transform-message doc:name="Prepare message to send to FB">
-                    <dw:set-payload><![CDATA[%dw 1.0
+		</dw:transform-message>
+		<objectstore:store config-ref="application_data"
+			key="#[payload.psid]" value-ref="#[dw(' payload - &quot;action&quot; ')]"
+			overwrite="true" doc:name="save customerId under psid key" />
+		<set-variable variableName="customerData" value="#[payload]"
+			doc:name="Set customerData" />
+		<choice doc:name="Choose action after login">
+			<when expression="#[payload.action.equals(&quot;order&quot;)]">
+				<logger message="#[message.payloadAs(java.lang.String)]"
+					level="DEBUG" doc:name="Find real order info as we now have customerId" />
+				<dw:transform-message doc:name="Prepare message to send to FB">
+					<dw:set-payload><![CDATA[%dw 1.0
 %output application/json
 ---
 {
@@ -170,18 +193,18 @@ payload]]></dw:set-payload>
 		text: "Thank you for linking your account, let me now show you your last order..."
 	}
 }]]></dw:set-payload>
-                </dw:transform-message>
-                <http:request config-ref="Call_Send_API_Request_Configuration" path="me/messages" method="POST" doc:name="Call Facebook Send API">
-                    <http:request-builder>
-                        <http:query-param paramName="access_token" value="${access_token}"/>
-                    </http:request-builder>
-                </http:request>
-                <flow-ref name="delivery-response" doc:name="delivery-response"/>
-                <flow-ref name="create-orders-response" doc:name="create-orders-response"/>
-            </when>
-            <otherwise>
-                <dw:transform-message doc:name="Prepare logged in message">
-                    <dw:set-payload><![CDATA[%dw 1.0
+				</dw:transform-message>
+				<http:request config-ref="Call_Send_API_Request_Configuration"
+					path="me/messages" method="POST" doc:name="Call Facebook Send API">
+					<http:request-builder>
+						<http:query-param paramName="access_token" value="${access_token}" />
+					</http:request-builder>
+				</http:request>
+				<flow-ref name="create-orders-response" doc:name="create-orders-response" />
+			</when>
+			<otherwise>
+				<dw:transform-message doc:name="Prepare logged in message">
+					<dw:set-payload><![CDATA[%dw 1.0
 %output application/json
 ---
 {
@@ -192,21 +215,23 @@ payload]]></dw:set-payload>
 		text: "Thank you for linking your account! Is there anything I can help you with?"
 	}
 }]]></dw:set-payload>
-                </dw:transform-message>
-                <http:request config-ref="Call_Send_API_Request_Configuration" path="me/messages" method="POST" doc:name="Call Facebook Send API">
-                    <http:request-builder>
-                        <http:query-param paramName="access_token" value="${access_token}"/>
-                    </http:request-builder>
-                </http:request>
-            </otherwise>
-        </choice>
+				</dw:transform-message>
+				<http:request config-ref="Call_Send_API_Request_Configuration"
+					path="me/messages" method="POST" doc:name="Call Facebook Send API">
+					<http:request-builder>
+						<http:query-param paramName="access_token" value="${access_token}" />
+					</http:request-builder>
+				</http:request>
+			</otherwise>
+		</choice>
 
-    </flow>
-    <flow name="echo-response">
-        <json:object-to-json-transformer doc:name="Object to JSON"/>
-        <dw:transform-message doc:name="Response Message" >
-            <dw:input-payload mimeType="application/json"/>
-            <dw:set-payload><![CDATA[%dw 1.0
+	</flow>
+	<flow name="echo-response">
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<dw:transform-message doc:name="Response Message">
+			<dw:input-payload mimeType="application/json" />
+			<dw:set-payload><![CDATA[%dw 1.0
 %output application/json
 ---
 {
@@ -217,13 +242,14 @@ payload]]></dw:set-payload>
 		text: "You can ask for your last order or for authenticating a different user." when payload.entry.messaging[0].message.text[0] !=null otherwise 'No Message'
 	}
 }]]></dw:set-payload>
-        </dw:transform-message>
-    </flow>
-    <flow name="greeting-response">
-        <json:object-to-json-transformer doc:name="Object to JSON"/>
-        <dw:transform-message doc:name="Response Message">
-            <dw:input-payload mimeType="application/json"/>
-            <dw:set-payload><![CDATA[%dw 1.0
+		</dw:transform-message>
+	</flow>
+	<flow name="greeting-response">
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<dw:transform-message doc:name="Response Message">
+			<dw:input-payload mimeType="application/json" />
+			<dw:set-payload><![CDATA[%dw 1.0
 %output application/json
 ---
 {
@@ -234,124 +260,50 @@ payload]]></dw:set-payload>
 		text: "Hi, How can we help you today?" when payload.entry.messaging[0].message.text[0] !=null otherwise 'No Message'
 	}
 }]]></dw:set-payload>
-        </dw:transform-message>
-    </flow>
-    <flow name="create-orders-response">
-
-
-
-        <http:request config-ref="Omnichannel_Request_Configuration" path="/customers/{customerId}/orders" method="GET" doc:name="GET /customers/{customerId}/orders">
-            <http:request-builder>
-                <http:uri-param paramName="customerId" value="#[flowVars.customerData.customerId]"/>
-
-
-            </http:request-builder>
-        </http:request>
-        <json:json-to-object-transformer doc:name="JSON to Object"/>
-        <set-variable variableName="ordersSize" value="#[payload.toArray().length]" doc:name="Set ordersSize"/>
-        <choice doc:name="Is there placed order?">
-            <when expression="#[flowVars.ordersSize &gt; 0]">
+		</dw:transform-message>
+	</flow>
+	<flow name="create-orders-response">
+		<http:request config-ref="Omnichannel_Request_Configuration"
+			path="/customers/{customerId}/orders" method="GET"
+			doc:name="GET /customers/{customerId}/orders">
+			<http:request-builder>
+				<http:uri-param paramName="customerId"
+					value="#[flowVars.customerData.customerId]" />
+			</http:request-builder>
+		</http:request>
+		<dw:transform-message doc:name="Transform to Object">
+			<dw:input-payload mimeType="application/json" />
+			<dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+payload]]></dw:set-payload>
+		</dw:transform-message>
+		<set-variable variableName="ordersSize" value="#[payload.toArray().length]"
+			doc:name="Set ordersSize" />
+		<choice doc:name="Is there placed order?">
+			<when expression="#[flowVars.ordersSize &gt; 0]">
                 <dw:transform-message doc:name="Extract data about last order">
-                    <dw:set-variable variableName="orderItems"><![CDATA[%dw 1.0
+                    <dw:input-payload mimeType="application/java"/>
+                    <dw:set-variable variableName="lastOrder"><![CDATA[%dw 1.0
 %output application/java
 ---
-payload[0].orderItems
-]]></dw:set-variable>
-                    <dw:set-variable variableName="totalPrice"><![CDATA[%dw 1.0
-%output application/java
----
-payload[0].price]]></dw:set-variable>
+using(last = payload[0]){
+	orderId: last.orderId,
+    customerId: last.customerId,
+    total: last.price as :number,
+    orderItems: last.orderItems, 
+	tax: 4.27,
+	shipping: 5.00, 
+	subtotal: last.price as :number -9.27 
+}]]></dw:set-variable>
                 </dw:transform-message>
-                <flow-ref name="delivery-response" doc:name="delivery-response"/>
-                <flow-ref name="list-response" doc:name="list-response"/>
-                <choice doc:name="Multiple order items?">
-                    <when expression="#[orderItems.toArray().length &gt; 1]">
-                        <dw:transform-message doc:name="Response Message">
-                            <dw:input-payload doc:sample="messageData.json" mimeType="application/json"/>
-                            <dw:set-payload><![CDATA[%dw 1.0
-%output application/json
----
-{
-	recipient: {
-		id: flowVars.customerData.psid
-	},
-	message:{
-      attachment: {
-			type: "template",
-			payload: {
-				template_type: "list",
-				top_element_style: "compact",
-				elements: flowVars.orderItems map
-					{
-						title: $.productName,
-						subtitle: "Quantity: $($.quantity)",
-						buttons: [{
-							title: "Product Details",
-							type: "web_url",
-							url: p('anypoint.store.url') ++ "/product/" ++ "1",
-							webview_height_ratio: "tall"
-							}]
-					}			
-			}
-		}
-	}
-}]]></dw:set-payload>
-                        </dw:transform-message>
-                    </when>
-                    <otherwise>
-                        <dw:transform-message doc:name="Response Message">
-                            <dw:set-payload><![CDATA[%dw 1.0
-%output application/json
----
-{
-	recipient: {
-		id: flowVars.customerData.psid
-	},
-"message":{
-    "attachment":{
-      "type":"template",
-      "payload":{
-        "template_type":"button",
-        "text": "Product name: " ++ flowVars.orderItems[0].productName ++ "\n" ++ "Quantity:" ++ flowVars.orderItems[0].quantity,
-        "buttons":[
-          {
-            "type":"web_url",
-            "url":p('anypoint.store.url') ++ "/product/" ++ "1",
-            "title": "Product Details"
-          }
-        ]
-      }
-    }
-  }
-}]]></dw:set-payload>
-                        </dw:transform-message>
-                    </otherwise>
-                </choice>
-                <http:request config-ref="Call_Send_API_Request_Configuration" path="me/messages" method="POST" doc:name="Call Facebook Send API">
-                    <http:request-builder>
-                        <http:query-param paramName="access_token" value="${access_token}"/>
-                    </http:request-builder>
-                </http:request>
-                <dw:transform-message doc:name="Response message">
-                    <dw:set-payload><![CDATA[%dw 1.0
-%output application/json
----
-{
-	recipient: {
-		id: flowVars.customerData.psid
-	},
-	message: {
-		  
-	      text: 
-	      		"\nTotal Price: " ++ flowVars.totalPrice
-		
-	}
-}]]></dw:set-payload>
-                </dw:transform-message>
-            </when>
-            <otherwise>
-                <dw:transform-message doc:name="Response Message">
-                    <dw:set-payload><![CDATA[%dw 1.0
+				<flow-ref name="list-response" doc:name="list-response" />
+				<flow-ref name="prepare-order-response" doc:name="prepare-order-response" />
+
+			</when>
+			<otherwise>
+				<dw:transform-message doc:name="Response Message">
+					<dw:set-payload><![CDATA[%dw 1.0
 %output application/json
 ---
 {
@@ -364,36 +316,54 @@ payload[0].price]]></dw:set-variable>
 	      		"\nYou have no active orders. If you want to check for another user, please let me know."
 	}
 }]]></dw:set-payload>
-                </dw:transform-message>
-            </otherwise>
-        </choice>
+				</dw:transform-message>
+			</otherwise>
+		</choice>
 
-        <http:request config-ref="Call_Send_API_Request_Configuration" path="me/messages" method="POST" doc:name="Call Facebook Send API">
-            <http:request-builder>
-                <http:query-param paramName="access_token" value="${access_token}"/>
-            </http:request-builder>
-        </http:request>
-		
-    </flow>
-    <flow name="delivery-response">
-        <http:request config-ref="Omnichannel_Request_Configuration" path="customers/{customerId}" method="GET" doc:name="GET/customers/{customerId}">
-            <http:request-builder>
-                <http:uri-param paramName="customerId" value="#[flowVars.customerData.customerId]"/>
+		<http:request config-ref="Call_Send_API_Request_Configuration"
+			path="me/messages" method="POST" doc:name="Call Facebook Send API">
+			<http:request-builder>
+				<http:query-param paramName="access_token" value="${access_token}" />
+			</http:request-builder>
+		</http:request>
+
+	</flow>
+	<flow name="prepare-order-response">
+		<dw:transform-message doc:name="check orderItems">
+			<dw:input-payload mimeType="application/json"/>
+			<dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+false when (flowVars.lastOrder.orderItems.shipmentItems == null and flowVars.lastOrder.orderItems.partnersItems == null)   
+	otherwise true	]]></dw:set-payload>
+            <dw:set-variable variableName="listItems"><![CDATA[%dw 1.0
+%output application/java
+---
+[]]]></dw:set-variable>
+		</dw:transform-message>
 
 
-
-            </http:request-builder>
-        </http:request>
-        <logger message="Customer Data #[payload:java.lang.String]" level="DEBUG" doc:name="Log customer info"/>
-        <dw:transform-message doc:name="intermediate mapping">
-            <dw:input-payload doc:sample="sample_data\json_1.json"/>
-            <dw:set-payload><![CDATA[%dw 1.0
+		<choice doc:name="Are Shipment and Partners items available?">
+			<when expression="#[payload == true]">
+				<http:request config-ref="Omnichannel_Request_Configuration"
+					path="customers/{customerId}" method="GET" doc:name="GET/customers/{customerId}">
+					<http:request-builder>
+						<http:uri-param paramName="customerId"
+							value="#[flowVars.lastOrder.customerId]" />
+					</http:request-builder>
+				</http:request>
+				<dw:transform-message doc:name="intermediate mapping">
+					<dw:input-payload mimeType="application/json" />
+					<dw:set-payload><![CDATA[%dw 1.0
 %output application/java
 ---
 payload.deliveryAddresses filter ($.type == 'SHIPPING') map {	
-	address: $.address ++ "\n" 
-	++ $.postalCode ++ ", " ++ $.city ++ "\n" ++ 
-    $.state ++ "," ++ $.country
+	recipientName: payload.firstName ++ " " ++ payload.lastName,
+	street1: $.address,
+	postalCode: $.postalCode, 
+	city: $.city,
+	state: upper $.state[0..1],
+	country: upper $.country[0..1]
  when (
 	$.address != null and
 	$.postalCode != null and
@@ -401,80 +371,223 @@ payload.deliveryAddresses filter ($.type == 'SHIPPING') map {
 	$.state != null and
 	$.country != null
 	)
-otherwise null
+ otherwise {
+	recipientName: payload.firstName ++ " " ++ payload.lastName
+ }
 }]]></dw:set-payload>
-        </dw:transform-message>
+				</dw:transform-message>
+				<dw:transform-message doc:name="Save customer info to var customer">
+					<dw:input-payload mimeType="application/java" />
+					<dw:set-variable variableName="customer"><![CDATA[%dw 1.0
+%output application/java
+---
+payload[0]]]></dw:set-variable>
+				</dw:transform-message>
 
-        <choice doc:name="Choice">
-            <when expression="#[payload[0].address != null]">
-                <dw:transform-message doc:name="Response Message">
-                    <dw:set-payload><![CDATA[%dw 1.0
+				<foreach collection="#[flowVars.lastOrder.orderItems.shipmentItems]"
+					doc:name="For Each">
+					<set-variable variableName="item" value="#[payload]"
+						doc:name="One Shipment Item " />
+					<dw:transform-message doc:name="Add item to listItems">
+						<dw:set-variable variableName="listItems"><![CDATA[%dw 1.0
+%output application/java
+---
+flowVars.listItems + {
+	productId: flowVars.item.productId,
+	variantId: flowVars.item.orderItemId,
+	productName: flowVars.item.productName,
+	quantity: flowVars.item.quantity as :number,
+	price: flowVars.item.price as :number,
+	locationDetails: "Shipped to your address"
+}]]></dw:set-variable>
+					</dw:transform-message>
+				</foreach>
+				<foreach collection="#[flowVars.lastOrder.orderItems.partnersItems]"
+					doc:name="For Each">
+					<set-variable variableName="item" value="#[payload]"
+						doc:name="One Partner Item" />
+					<http:request config-ref="Omnichannel_Request_Configuration"
+						path="/partners/{partnerId}" method="GET" doc:name="GET/partners/{partnerId}">
+						<http:request-builder>
+							<http:uri-param paramName="partnerId" value="#[payload.locationId]" />
+						</http:request-builder>
+					</http:request>
+					<dw:transform-message doc:name="Add item to listItems">
+						<dw:input-payload mimeType="application/json" />
+						<dw:set-variable variableName="listItems"><![CDATA[%dw 1.0
+%output application/java
+---
+flowVars.listItems + {
+	productId: flowVars.item.productId,
+	variantId: flowVars.item.orderItemId,
+	productName: flowVars.item.productName,
+	quantity: flowVars.item.quantity as :number,
+	price: flowVars.item.price as :number,
+	locationDetails: "Shipped to your address from Partner: " ++ payload.name
+	
+}]]></dw:set-variable>
+					</dw:transform-message>
+				</foreach>
+				<foreach collection="#[flowVars.lastOrder.orderItems.pickupItems]"
+					doc:name="For Each">
+					<set-variable variableName="item" value="#[payload]"
+						doc:name="One Pickup Item" />
+					<http:request config-ref="Omnichannel_Request_Configuration"
+						path="/stores/{storeId}" method="GET" doc:name="GET/stores/{storeId}">
+						<http:request-builder>
+							<http:uri-param paramName="storeId" value="#[payload.locationId]" />
+						</http:request-builder>
+					</http:request>
+					<dw:transform-message doc:name="Add item to listItems">
+						<dw:input-payload mimeType="application/json" />
+						<dw:set-variable variableName="listItems"><![CDATA[%dw 1.0
+%output application/java
+---
+flowVars.listItems + {
+	productId: flowVars.item.productId,
+	variantId: flowVars.item.orderItemId,
+	productName: flowVars.item.productName,
+	quantity: flowVars.item.quantity as :number,
+	price: flowVars.item.price as :number,
+	locationDetails: "Pick up in: " ++ payload.name ++ ", " ++ payload.address.streetLine1 ++ ", " ++ payload.address.zipCode ++ ", " ++ payload.address.city
+}]]></dw:set-variable>
+					</dw:transform-message>
+				</foreach>
+				<dw:transform-message doc:name="Response Message">
+					<dw:input-payload mimeType="application/java" />
+					<dw:set-payload><![CDATA[%dw 1.0
 %output application/json
 ---
 {
-	recipient: {
-		id: flowVars.customerData.psid
-	},
-	message: {
-		  
-	      text: 
-	      		"Here are your order details:\n\n" ++
-	      		"Arriving: " ++ 
-	      		(now + |P2D|) as :string {format: "EEEE, MMM d"} ++
-				"\n" ++
-	      		"Carrier: USPS\n" ++
-	      		"Shipped to:\n" ++
-	      		 payload[0].address
-		
-	}
+  recipient:{
+    id: flowVars.customerData.psid
+  },
+  message:{
+    attachment:{
+      type:"template",
+      payload:{
+        template_type: "receipt",
+        recipient_name: flowVars.customer.recipientName,
+        order_number:flowVars.lastOrder.orderId,
+        currency:"USD",
+        payment_method:"Visa 2345",             
+        address:{
+          street_1: flowVars.customer.street1,
+          city: flowVars.customer.city,
+          postal_code:flowVars.customer.postalCode,
+          state: flowVars.customer.state,
+          country:flowVars.customer.country
+        },
+        summary:{
+          subtotal: flowVars.lastOrder.subtotal,
+          shipping_cost: flowVars.lastOrder.shipping,
+          total_tax: flowVars.lastOrder.tax,
+          total_cost: flowVars.lastOrder.total
+        },
+        elements: flowVars.listItems map
+          {
+            title: $.productName,
+            subtitle: $.locationDetails,
+            quantity: $.quantity, 
+            price: $.price, 
+            currency: "USD"
+          }
+      }
+    }
+  }
 }]]></dw:set-payload>
-                </dw:transform-message>
-                <http:request config-ref="Call_Send_API_Request_Configuration" path="me/messages" method="POST" doc:name="Call Facebook Send API">
-                    <http:request-builder>
-                        <http:query-param paramName="access_token" value="${access_token}"/>
-                    </http:request-builder>
-                </http:request>
-            </when>
-            <otherwise>
-                <logger message="Customer's address not found." level="ERROR" doc:name="Log Customer address not found"/>
-            </otherwise>
-        </choice>
+				</dw:transform-message>
+			</when>
+			<otherwise>
+				<logger message="Order only for PICKUP" level="INFO"
+					doc:name="Only Pickup items" />
 
-
-    </flow>
-    <flow name="list-response">
-        <dw:transform-message doc:name="Response Message">
-            <dw:set-payload><![CDATA[%dw 1.0
+				<foreach collection="#[flowVars.lastOrder.orderItems.pickupItems]"
+					doc:name="For Each">
+					<set-variable variableName="item" value="#[payload]"
+						doc:name="One Pickup Item" />
+					<http:request config-ref="Omnichannel_Request_Configuration"
+						path="/stores/{storeId}" method="GET" doc:name="GET/stores/{storeId}">
+						<http:request-builder>
+							<http:uri-param paramName="storeId" value="#[payload.locationId]" />
+						</http:request-builder>
+					</http:request>
+					<dw:transform-message doc:name="Add item to listItems">
+						<dw:input-payload mimeType="application/json" />
+						<dw:set-variable variableName="listItems"><![CDATA[%dw 1.0
+%output application/java
+---
+flowVars.listItems + {
+	productId: flowVars.item.productId,
+	variantId: flowVars.item.orderItemId,
+	productName: flowVars.item.productName,
+	quantity: flowVars.item.quantity,
+    price: flowVars.item.price,
+	locationDetails: "Pick up in: " ++ payload.name ++ ", " ++ payload.address.streetLine1 ++ ", " ++ payload.address.zipCode ++ ", " ++ payload.address.city   
+}]]></dw:set-variable>
+					</dw:transform-message>
+				</foreach>
+				<dw:transform-message doc:name="Response Message">
+					<dw:input-payload mimeType="application/java" />
+					<dw:set-payload><![CDATA[%dw 1.0
 %output application/json
 ---
 {
-	recipient: {
-		id: flowVars.customerData.psid
-	},
-	message: {
-	      text: "Below is the list of ordered products:\n"
-	}
+  recipient:{
+    id: flowVars.customerData.psid
+  },
+  message:{
+    attachment:{
+      type:"template",
+      payload:{
+        template_type: "receipt",
+        recipient_name: "Stores for pickup",
+        order_number: flowVars.lastOrder.orderId,
+        currency:"USD",
+        payment_method:"Visa 2345",             
+        summary:{
+          subtotal: flowVars.lastOrder.subtotal,
+          shipping_cost: flowVars.lastOrder.shipping,
+          total_tax: flowVars.lastOrder.tax,
+          total_cost: flowVars.lastOrder.total
+        },
+        elements: flowVars.listItems map
+          {
+            title: $.productName,
+            subtitle: $.locationDetails,
+            quantity: $.quantity as :number, 
+            price: $.price as :number, 
+            currency:"USD"
+          }
+      }
+    }
+  }
 }]]></dw:set-payload>
-        </dw:transform-message>
-        <http:request config-ref="Call_Send_API_Request_Configuration" path="me/messages" method="POST" doc:name="Call Facebook Send API">
-            <http:request-builder>
-                <http:query-param paramName="access_token" value="${access_token}"/>
-            </http:request-builder>
-        </http:request>
-        <logger message="#[payload:java.lang.String]" level="DEBUG" doc:name="Log FB response"/>
-    </flow>
-    <flow name="order-response">
-        <logger level="DEBUG" doc:name="Log webhook data" message="#[message.payloadAs(java.lang.String)]"/>
-        <set-variable variableName="input" value="#[payload]" doc:name="save to var input"/>
-        <set-variable variableName="psid" value="#[payload.entry[0].messaging[0].sender.id]" doc:name="var psid"/>
-        <objectstore:contains config-ref="application_data" key="#[flowVars.psid]" doc:name="Check presence of customer data by PSID"/>
-        <choice doc:name="Is messenger user record present?">
-            <when expression="#[payload == true]">
-                <objectstore:retrieve config-ref="application_data" key="#[flowVars.psid]" targetProperty="customerData" doc:name="Retrieve by PSID to var customerData"/>
+				</dw:transform-message>
+			</otherwise>
+		</choice>
 
-                <flow-ref name="create-orders-response" doc:name="create-orders-response"/>
-                <dw:transform-message doc:name="Reply">
-                    <dw:set-payload><![CDATA[%dw 1.0
+		<logger level="INFO" doc:name="Logger" message="#[payload]" />
+	</flow>
+
+	<flow name="order-response">
+		<logger level="DEBUG" doc:name="Log webhook data"
+			message="#[message.payloadAs(java.lang.String)]" />
+		<set-variable variableName="input" value="#[payload]"
+			doc:name="save to var input" />
+		<set-variable variableName="psid"
+			value="#[payload.entry[0].messaging[0].sender.id]" doc:name="var psid" />
+		<objectstore:contains config-ref="application_data"
+			key="#[flowVars.psid]" doc:name="Check presence of customer data by PSID" />
+		<choice doc:name="Is messenger user record present?">
+			<when expression="#[payload == true]">
+				<objectstore:retrieve config-ref="application_data"
+					key="#[flowVars.psid]" targetProperty="customerData"
+					doc:name="Retrieve by PSID to var customerData" />
+
+				<flow-ref name="create-orders-response" doc:name="create-orders-response" />
+				<dw:transform-message doc:name="Reply">
+					<dw:set-payload><![CDATA[%dw 1.0
 %output application/json
 ---
 {
@@ -487,12 +600,13 @@ otherwise null
 	      		
 	}
 }]]></dw:set-payload>
-                </dw:transform-message>
-            </when>
-            <otherwise>
-                <logger level="INFO" doc:name="User must login first" message="Going to log in user"/>
-                <dw:transform-message doc:name="Reply with login link">
-                    <dw:set-payload><![CDATA[%dw 1.0
+				</dw:transform-message>
+			</when>
+			<otherwise>
+				<logger level="INFO" doc:name="User must login first"
+					message="Going to log in user" />
+				<dw:transform-message doc:name="Reply with login link">
+					<dw:set-payload><![CDATA[%dw 1.0
 %output application/json
 %var stateRaw = {
 	psid: flowVars.input.entry.messaging[0].sender.id[0],
@@ -512,17 +626,43 @@ otherwise null
 	      "$(loginUrl)?origin=bot&state=$(stateBase64UrlEncoded)"
 	}
 }]]></dw:set-payload>
-                </dw:transform-message>
-            </otherwise>
-        </choice>
-    </flow>
-
-    <flow name="logout-response">
-        <set-variable variableName="input" value="#[payload]" doc:name="save to var input"/>
-        <set-variable variableName="psid" value="#[payload.entry[0].messaging[0].sender.id]" doc:name="var psid"/>
-        <objectstore:remove config-ref="application_data" doc:name="ObjectStore" key="#[flowVars.psid]" ignoreNotExists="true" doc:description="Remove entry for user if exists."/>
-        <dw:transform-message doc:name="Reply with login link">
-            <dw:set-payload><![CDATA[%dw 1.0
+				</dw:transform-message>
+			</otherwise>
+		</choice>
+	</flow>
+	<flow name="list-response">
+		<dw:transform-message doc:name="Response Message">
+			<dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+	recipient: {
+		id: flowVars.customerData.psid
+	},
+	message: {
+	      text: "Here is your last order:\n"
+	}
+}]]></dw:set-payload>
+		</dw:transform-message>
+		<http:request config-ref="Call_Send_API_Request_Configuration"
+			path="me/messages" method="POST" doc:name="Call Facebook Send API">
+			<http:request-builder>
+				<http:query-param paramName="access_token" value="${access_token}" />
+			</http:request-builder>
+		</http:request>
+		<logger message="#[payload:java.lang.String]" level="DEBUG"
+			doc:name="Log FB response" />
+	</flow>
+	<flow name="logout-response">
+		<set-variable variableName="input" value="#[payload]"
+			doc:name="save to var input" />
+		<set-variable variableName="psid"
+			value="#[payload.entry[0].messaging[0].sender.id]" doc:name="var psid" />
+		<objectstore:remove config-ref="application_data"
+			doc:name="ObjectStore" key="#[flowVars.psid]" ignoreNotExists="true"
+			doc:description="Remove entry for user if exists." />
+		<dw:transform-message doc:name="Reply with login link">
+			<dw:set-payload><![CDATA[%dw 1.0
 %output application/json
 %var stateRaw = {
 	psid: flowVars.input.entry.messaging[0].sender.id[0],
@@ -542,15 +682,16 @@ otherwise null
 	      "$(loginUrl)?origin=bot&state=$(stateBase64UrlEncoded)"
 	}
 }]]></dw:set-payload>
-        </dw:transform-message>
-    </flow>
+		</dw:transform-message>
+	</flow>
 
 
 	<flow name="facebook-bot-site">
-        <http:listener config-ref="HTTPS_Listener_Configuration" path="/" doc:name="HTTP"/>
-        <logger message="#[payload]" level="DEBUG" doc:name="Log input"/>
-        <set-payload value="Hello Facebook Bot!" doc:name="Set Payload"/>
-    </flow>
+		<http:listener config-ref="HTTPS_Listener_Configuration"
+			path="/" doc:name="HTTP" />
+		<logger message="#[payload]" level="DEBUG" doc:name="Log input" />
+		<set-payload value="Hello Facebook Bot!" doc:name="Set Payload" />
+	</flow>
 
 
 
