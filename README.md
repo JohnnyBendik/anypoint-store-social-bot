@@ -18,7 +18,7 @@ Please review the terms of the license before downloading and using this templat
 
 # Use Case <a name="usecase"/>
 
-Anypoint Store Social Bot project provides comunication between customers and Facebook Messenger Bot. First POC provides only the functionality of querying existent orders from OMNICHANNEL API.
+Anypoint Store Social Bot project provides communication between customers and Facebook Messenger Bot. First POC provides only the functionality of querying existent orders from OMNICHANNEL API.
 
 ## Setup
 1. Create Facebook App
@@ -34,7 +34,7 @@ Anypoint Store Social Bot project provides comunication between customers and Fa
 
 # Considerations <a name="considerations"/>
 
-To make this Anypoint Template run, there are certain preconditions that must be considered. **Failling to do so could lead to unexpected behavior of the template.**
+To make this Anypoint Template run, there are certain preconditions that must be considered. **Failing to do so could lead to unexpected behavior of the template.**
 
 ## APIs security considerations <a name="apissecurityconsiderations"/>
 This Experience API is meant to be deployed to CloudHub and managed using the API Platform Manager.
