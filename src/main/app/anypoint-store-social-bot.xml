@@ -157,6 +157,11 @@ payload]]></dw:set-payload>
 	}
 }]]></dw:set-payload>
             </dw:transform-message>
+            <http:request config-ref="Call_Send_API_Request_Configuration" path="me/messages" method="POST" doc:name="Call Facebook Send API">
+                <http:request-builder>
+                    <http:query-param paramName="access_token" value="${access_token}"/>
+                </http:request-builder>
+            </http:request>
         </catch-exception-strategy>
 
 	</flow>
