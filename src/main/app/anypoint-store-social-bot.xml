@@ -141,6 +141,23 @@ payload]]></dw:set-payload>
 					doc:name=" Respond with challenge" />
 			</otherwise>
 		</choice>
+        <catch-exception-strategy doc:name="Catch Exception Strategy">
+            <json:object-to-json-transformer doc:name="Object to JSON"/>
+            <dw:transform-message doc:name="Error_Response Message">
+                <dw:input-payload mimeType="application/json"/>
+                <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+	recipient: {
+		id: payload.entry.messaging[0].sender.id[0]
+	},
+	message: {
+		text: "There was an error with your request, please review your user configuration on the Anypoint Store."
+	}
+}]]></dw:set-payload>
+            </dw:transform-message>
+        </catch-exception-strategy>
 
 	</flow>
 	<flow name="after-login-flow">
