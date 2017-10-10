@@ -17,7 +17,8 @@
 	<properties>
 		<mule.tools.version>1.2</mule.tools.version>
 		<skip.readme.generation>true</skip.readme.generation>
-	</properties>
+	<mule.version>3.8.5</mule.version>
+    </properties>
 
 	<build>
 		<plugins>
@@ -100,5 +101,5 @@
 			<version>${mule.version}</version>
 			<scope>provided</scope>
 		</dependency>
-	</dependencies>
+    </dependencies>
 </project>
