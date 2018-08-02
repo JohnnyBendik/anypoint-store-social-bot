@@ -45,18 +45,22 @@ payload]]></ee:set-payload>
 output application/java
 ---
 payload.entry.messaging[0].sender.id[0]]]></ee:set-variable>
+						<ee:set-variable variableName="textMessage" ><![CDATA[%dw 2.0
+output application/java
+---
+lower(payload.entry[0].messaging[0].message.text)]]></ee:set-variable>
 					</ee:variables>
 				</ee:transform>
 				<choice doc:name="Some message?" doc:id="48fafdb0-f716-4775-b9a5-6ec3839c3560" >
 					<when expression="#[payload.entry[0].messaging[0].message != null]">
 						<choice doc:name="What action to perform?" doc:id="49644500-eaf3-4bfe-aa38-7a4c2da2a909" >
-							<when expression='#[payload.entry[0].messaging[0].message.text contains "Hi"]' >
+							<when expression='#[vars.textMessage contains "hi"]' >
 								<flow-ref doc:name="greeting-response" doc:id="6b622fac-b033-4370-a243-ad7a4e9c8956" name="greeting-response"/>
 							</when>
-							<when expression='#[payload.entry[0].messaging[0].message.text contains "order"]' >
+							<when expression='#[vars.textMessage contains "order"]' >
 								<flow-ref doc:name="orders-response" doc:id="6e85d4a8-542d-4b1a-9ca3-0226f6bccfd4" name="orders-response"/>
 							</when>
-							<when expression='#[payload.entry[0].messaging[0].message.text contains "user"]' >
+							<when expression='#[vars.textMessage contains "user"]' >
 								<flow-ref doc:name="logout-response" doc:id="34d617bc-930d-4c63-84d6-7a4eea24bf47" name="logout-response"/>
 							</when>
 							<otherwise>
@@ -116,7 +120,7 @@ output application/json
 		id: vars.psid
 	},
 	message: {
-		text: if (payload.entry.messaging[0].message.text[0] !=null) "You can ask for your last order or for authenticating a different user."  else 'No Message'
+		text: if (vars.textMessage !=null) "You can ask for your last order or for authenticating a different user."  else 'No Message'
 	}
 }]]></ee:set-payload>
 			</ee:message>
@@ -149,10 +153,10 @@ output application/json
 ---
 {
 	recipient: {
-		id: payload.entry.messaging[0].sender.id[0]
+		id: vars.psid
 	},
 	message: {
-		text: if (payload.entry.messaging[0].message.text[0] !=null) ("Hi, How can we help you today?")  else 'No Message'
+		text: if (vars.textMessage !=null) ("Hi, How can we help you today?")  else 'No Message'
 	}
 }]]></ee:set-payload>
 			</ee:message>
