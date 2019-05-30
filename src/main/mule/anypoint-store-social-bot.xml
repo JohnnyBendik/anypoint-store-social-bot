@@ -8,6 +8,7 @@ http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/
 http://www.mulesoft.org/schema/mule/retail-omnichannel-experience-api http://www.mulesoft.org/schema/mule/retail-omnichannel-experience-api/current/mule-retail-omnichannel-experience-api.xsd
 http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd
 http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd">
+	<global-property doc:name="Global Property" doc:id="d24f1ce9-0499-459b-aa67-d7536c728721" name="mule.env" value="dev" />
 	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="54d1b6ee-f3fa-46af-885b-ce5c44d4a872" >
 		<http:listener-connection host="0.0.0.0" port="${https.port}" protocol="HTTPS" tlsContext="TLS_Context"/>
 		<http:listener-interceptors >
@@ -24,11 +25,11 @@ http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/
 	<retail-omnichannel-experience-api:config name="Retail_Omnichannel_Experience_API_Config" doc:name="Retail Omnichannel Experience API Config" doc:id="7c5077d9-b66b-4d48-b8e2-d5b9b690ece8" property_host="${omni-experience-api.host}" property_port="${omni-experience-api.port}" property_basePath="${omni-experience-api.basePath}" property_protocol="${omni-experience-api.protocol}" />
 	<configuration-properties doc:name="Configuration properties" doc:id="64d4a0a4-e707-4fd9-aec8-b1e37f526a5f" file="common.properties" />
 	<configuration-properties doc:name="Configuration properties" doc:id="91fcfd57-2f93-4f86-b6c5-e9e4712965f4" file="mule.${mule.env}.properties" />
-	<configuration-properties doc:name="Configuration properties" doc:id="9386eb02-1c76-4900-b5b1-175598184eb7" file="mule-artifact.properties" />
 	<os:object-store name="application_data" doc:name="Object store" doc:id="36e18fcf-d99f-499e-a0a0-90cac5dc5946" />
 	<tls:context name="TLS_Context" doc:name="TLS Context" doc:id="725c01b9-93fe-4ab1-a3ce-d2e8b61efc9a" >
 		<tls:key-store type="jks" path="${keystore.location}" alias="${key.alias}" keyPassword="${key.password}" password="${keystore.password}"/>
 	</tls:context>
+	
 	<flow name="webhook-flow" doc:id="ceb150ca-9bdf-47a5-8a9a-292167527c48" >
 		<http:listener doc:name="/webhook" doc:id="b7dbb6a9-08d6-4a8a-802a-a2b3ed6d2d5e" config-ref="HTTP_Listener_config" path="/webhook"/>
 		<choice doc:name="Operation?" doc:id="c048cb38-e288-4429-a3c4-7299c55d8fc9" >
@@ -164,7 +165,7 @@ output application/json
 		<flow-ref doc:name="Call-Facebook-API" doc:id="b7410ae0-b995-4f9d-8817-744c87a27b2f" name="Call-Facebook-API"/>
 	</flow>
 	<flow name="create-orders-response" doc:id="e437108d-b437-45bf-9c65-f35a1823a9e9" >
-		<retail-omnichannel-experience-api:get-orders-by-customer-id doc:name="Get orders by customer id" doc:id="0b516fbd-8a1e-4fcf-aa34-51a7cc42836c" config-ref="Retail_Omnichannel_Experience_API_Config" customer-id="#[vars.customerData.customerId]"/>
+		<retail-omnichannel-experience-api:get-orders-for-customer doc:name="Get orders for customer" doc:id="2914f91f-3e81-4ab1-aac5-b78d93e6a09e" customer-id="#[vars.customerData.customerId]" config-ref="Retail_Omnichannel_Experience_API_Config"/>
 		<choice doc:name="Some orders?" doc:id="dbb592f4-cf2a-462e-959d-785978e36272" >
 			<when expression="#[sizeOf(payload) &gt; 0]" >
 				<ee:transform doc:name="Extract data about last order" doc:id="9d34c1f1-fdc4-404a-b8b7-4a46cfbca6fd" >
@@ -221,7 +222,7 @@ output application/java
 					</ee:variables>
 				</ee:transform>
 				<foreach doc:name="For Each" doc:id="820b1d5c-ec7a-48bf-8bad-543c885be0b9" collection="#[vars.partners]">
-					<retail-omnichannel-experience-api:get-partner-by-partner-id doc:name="Get partner by partner id" doc:id="cda7bb1a-fa83-4826-83ab-846fe8e6b4a3" partner-id="#[payload]" config-ref="Retail_Omnichannel_Experience_API_Config"/>
+					<retail-omnichannel-experience-api:get-partner doc:name="Get partner" doc:id="9908e7f6-c441-4dc2-8080-637f4600e679" partner-id="#[payload]" config-ref="Retail_Omnichannel_Experience_API_Config"/>
 					<ee:transform doc:name="Add Partner to List" doc:id="9c1e9c84-9fc9-41d0-80b4-20b82b3ec998" >
 						<ee:message >
 						</ee:message>
@@ -234,7 +235,7 @@ vars.listPartners + payload]]></ee:set-variable>
 					</ee:transform>
 				</foreach>
 				<foreach doc:name="For Each" doc:id="b19aae2f-3685-4877-9f36-650a7472aec7" collection="#[vars.stores]">
-					<retail-omnichannel-experience-api:get-store-by-store-id doc:name="Get store by store id" doc:id="89e9bbc2-51ae-4882-83f4-d6a1d5117dbb" config-ref="Retail_Omnichannel_Experience_API_Config" store-id="#[payload]"/>
+					<retail-omnichannel-experience-api:get-store doc:name="Get store" doc:id="5e2aa092-1def-4512-8dc3-11a2f810c3b3" store-id="#[payload]" config-ref="Retail_Omnichannel_Experience_API_Config"/>
 					<ee:transform doc:name="Add Store to list" doc:id="2daa11d4-49b0-423e-ab85-e0e855f535c6" >
 						<ee:message >
 						</ee:message>
@@ -249,7 +250,7 @@ vars.listStores + payload]]></ee:set-variable>
 				<choice doc:name="Are Shipment and Partners items available?" doc:id="e0817a17-487c-4056-a733-5c1eef235948" >
 					<when expression="#[payload == true]" >
 						<flow-ref doc:name="list-response" doc:id="a7cdfd8d-bcbf-47eb-a0b0-fd02763b77e4" name="list-response"/>
-						<retail-omnichannel-experience-api:get-customer-by-customer-id doc:name="Get customer by customer id" doc:id="39ddc4b0-b654-45a5-a09a-57d773745f69" config-ref="Retail_Omnichannel_Experience_API_Config" customer-id="#[vars.lastOrder.customerId]"/>
+						<retail-omnichannel-experience-api:get-customer doc:name="Get customer" doc:id="a499a75a-4c56-4e26-9f00-550969f9e61f" customer-id="#[vars.lastOrder.customerId]" config-ref="Retail_Omnichannel_Experience_API_Config"/>
 						<set-variable value='#[payload.firstName ++ " " ++ payload.lastName]' doc:name="Set recipient" doc:id="4ecafe01-9ba2-4872-b0c4-977f3cab1c2c" variableName="recipient"/>
 						<foreach doc:name="For Each Partner Item" doc:id="77b639e1-58d2-4cdd-8e6a-724da570bcde" collection="#[vars.lastOrder.orderItems.partnersItems]">
 							<ee:transform doc:name="Add item to listItems" doc:id="b0f703ce-cd23-46b7-b78c-effe9b9356f3" >
@@ -573,8 +574,8 @@ fun toUrlSafeCustomerId(value) = value replace '|' with '_'
 ---
 {
 	customerId: toUrlSafeCustomerId(accessTokenPayload.sub),
-	psid: read(fromBase64(payload.state), 'application/json').psid,
-	action: read(fromBase64(payload.state), 'application/json').action,
+	psid: read(fromBase64((payload.state splitBy('%'))[0]), 'application/json').psid,
+	action: read(fromBase64((payload.state splitBy('%'))[0]), 'application/json').action,
 	accessToken: payload.access_token,
 	name: idTokenPayload.name,
 	givenName: idTokenPayload.given_name,

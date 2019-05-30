@@ -1,25 +1,17 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	
+	<parent>
+		<groupId>org.mule.templates</groupId>
+		<artifactId>templates-tooling-parent-pom</artifactId>
+		<version>2.1.19</version>
+	</parent>
+	
 	<modelVersion>4.0.0</modelVersion>
-
-	<groupId>org.mule.templates</groupId>
 	<artifactId>anypoint-store-social-bot</artifactId>
     <version>2.1.0-SNAPSHOT</version>
     <packaging>mule-application</packaging>
-
 	<name>anypoint-store-social-bot</name>
-
-    <properties>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-
-		<app.runtime>4.1.1</app.runtime>
-		<mule.maven.plugin.version>3.1.1</mule.maven.plugin.version>
-		
-		<http.connector.version>1.2.1</http.connector.version>
-        <objectstore.connector.version>1.1.0</objectstore.connector.version>
-        <omnichannel.experience.api.version>2.0.4</omnichannel.experience.api.version>
-	</properties>
 
 	<build>
 		<plugins>
@@ -29,31 +21,29 @@
 				<version>${mule.maven.plugin.version}</version>
 				<extensions>true</extensions>
 				<configuration>
-				<classifier>mule-application</classifier>
+				<classifier>mule-application-template</classifier>
                 </configuration>
 			</plugin>
 		</plugins>
 	</build>
 
 	<dependencies>
-    	<dependency>
-            <groupId>47f07e0a-f578-47d4-9591-d9e7afffb0fc.retail</groupId>
-            <artifactId>omnichannel_api</artifactId>
-            <version>${omnichannel.experience.api.version}</version>
-            <classifier>mule-plugin</classifier>
-        </dependency>
-    	<dependency>
-            <groupId>org.mule.connectors</groupId>
-            <artifactId>mule-http-connector</artifactId>
-            <version>${http.connector.version}</version>
-            <classifier>mule-plugin</classifier>
-        </dependency>
-    	<dependency>
-            <groupId>org.mule.connectors</groupId>
-            <artifactId>mule-objectstore-connector</artifactId>
-            <version>${objectstore.connector.version}</version>
-            <classifier>mule-plugin</classifier>
-        </dependency>
+	    	<dependency>
+	            <groupId>org.mule.connectors</groupId>
+	            <artifactId>mule-http-connector</artifactId>
+	            <classifier>mule-plugin</classifier>
+	        </dependency>
+	    	<dependency>
+	            <groupId>org.mule.connectors</groupId>
+	            <artifactId>mule-objectstore-connector</artifactId>
+	            <classifier>mule-plugin</classifier>
+	        </dependency>
+	    	<dependency>
+	            <groupId>68ef9520-24e9-4cf2-b2f5-620025690913</groupId>
+	            <artifactId>mule-plugin-catalyst-retail-omnichannel-xp-api</artifactId>
+	            <version>2.0.3</version>
+	            <classifier>mule-plugin</classifier>
+	        </dependency>
     </dependencies>
 
 	<repositories>
@@ -70,16 +60,4 @@
             <layout>default</layout>
         </repository>
     </repositories>
-    <pluginRepositories>
-        <pluginRepository>
-            <id>mulesoft-releases</id>
-            <name>mulesoft release repository</name>
-            <layout>default</layout>
-            <url>https://repository.mulesoft.org/releases/</url>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </pluginRepository>
-    </pluginRepositories>
-
 </project>
