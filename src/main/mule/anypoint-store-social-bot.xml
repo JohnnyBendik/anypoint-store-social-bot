@@ -556,6 +556,7 @@ var loginUrl = p('user.login.url')
 	</flow>
 	<flow name="after-login" doc:id="4d7b6ec9-c170-4fdf-b573-95e277716d78" >
 		<http:listener doc:name="Listener" doc:id="5406768b-5e59-4d36-b569-fed6c2a5309e" config-ref="HTTP_Listener_config" path="/callback" allowedMethods="GET,OPTIONS,POST"/>
+		<logger level="INFO" doc:name="Log input data" doc:id="c27f82b5-e074-4aac-bb5c-dee878454c85" message="#[output application/json --- payload]"/>
 		<ee:transform doc:name="extract useful data" doc:id="4ea5c2a6-5f25-47fc-87e4-c75d68f2a701" >
 			<ee:message >
 			</ee:message>
@@ -566,20 +567,13 @@ import * from dw::core::Binaries
 var accessTokenPayloadBase64UrlEncoded = (payload.access_token splitBy '.')[1]
 var accessTokenPayloadString = fromBase64(accessTokenPayloadBase64UrlEncoded)
 var accessTokenPayload = read(accessTokenPayloadString, 'application/json')
-
-var idTokenPayloadBase64UrlEncoded = (payload.id_token splitBy '.')[1]
-var idTokenPayloadString = fromBase64(idTokenPayloadBase64UrlEncoded)
-var idTokenPayload = read(idTokenPayloadString, 'application/json')
 fun toUrlSafeCustomerId(value) = value replace '|' with '_' 
 ---
 {
 	customerId: toUrlSafeCustomerId(accessTokenPayload.sub),
 	psid: read(fromBase64((payload.state splitBy('%'))[0]), 'application/json').psid,
 	action: read(fromBase64((payload.state splitBy('%'))[0]), 'application/json').action,
-	accessToken: payload.access_token,
-	name: idTokenPayload.name,
-	givenName: idTokenPayload.given_name,
-	lastName: idTokenPayload.family_name	
+	accessToken: payload.access_token
 }]]></ee:set-variable>
 			</ee:variables>
 		</ee:transform>
