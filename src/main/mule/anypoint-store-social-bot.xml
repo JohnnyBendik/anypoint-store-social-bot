@@ -184,8 +184,8 @@ using(last = payload[0]){
 	orderId: last.identifier,
     customerId: last.customerId,
     subtotal: last.subtotal as Number,
-    shippingCost: last.shippingCost as Number,
-    totalTax: last.totalTax as Number,
+    shippingCost: last.shippingPrice as Number,
+    totalTax: last.taxPrice as Number,
     total: last.total as Number,
     orderItems: {
     	(pickupItems: if(last.orderItems.pickupItems != null ) last.orderItems.pickupItems else []),
