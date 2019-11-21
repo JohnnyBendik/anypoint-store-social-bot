@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>org.mule.templates</groupId>
 		<artifactId>templates-tooling-parent-pom</artifactId>
-		<version>2.1.19</version>
+		<version>2.1.24</version>
 	</parent>
 	
 	<modelVersion>4.0.0</modelVersion>
@@ -38,12 +38,12 @@
 	            <artifactId>mule-objectstore-connector</artifactId>
 	            <classifier>mule-plugin</classifier>
 	        </dependency>
-	    	<dependency>
-	            <groupId>68ef9520-24e9-4cf2-b2f5-620025690913</groupId>
-	            <artifactId>mule-plugin-catalyst-retail-omnichannel-xp-api</artifactId>
-	            <version>2.0.3</version>
-	            <classifier>mule-plugin</classifier>
-	        </dependency>
+    		<dependency>
+            <groupId>68ef9520-24e9-4cf2-b2f5-620025690913</groupId>
+            <artifactId>mule-plugin-catalyst-retail-omnichannel-xp-api</artifactId>
+            <version>2.0.4</version>
+            <classifier>mule-plugin</classifier>
+        </dependency>
     </dependencies>
 
 	<repositories>

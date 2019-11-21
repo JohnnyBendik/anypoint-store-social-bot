@@ -8,7 +8,11 @@ http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/
 http://www.mulesoft.org/schema/mule/retail-omnichannel-experience-api http://www.mulesoft.org/schema/mule/retail-omnichannel-experience-api/current/mule-retail-omnichannel-experience-api.xsd
 http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd
 http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd">
+	
 	<global-property doc:name="Global Property" doc:id="d24f1ce9-0499-459b-aa67-d7536c728721" name="mule.env" value="dev" />
+	<configuration-properties doc:name="Configuration properties" doc:id="64d4a0a4-e707-4fd9-aec8-b1e37f526a5f" file="common.properties" />
+	<configuration-properties doc:name="Configuration properties" doc:id="91fcfd57-2f93-4f86-b6c5-e9e4712965f4" file="mule.${mule.env}.properties" />
+	
 	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="54d1b6ee-f3fa-46af-885b-ce5c44d4a872" >
 		<http:listener-connection host="0.0.0.0" port="${https.port}" protocol="HTTPS" tlsContext="TLS_Context"/>
 		<http:listener-interceptors >
@@ -19,22 +23,26 @@ http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/
 			</http:cors-interceptor>
 		</http:listener-interceptors>
 	</http:listener-config>
-	<http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="621fc208-2944-4753-9434-510cd4b9b499" >
-		<http:request-connection protocol="HTTPS" host="graph.facebook.com" port="443" />
-	</http:request-config>
-	<retail-omnichannel-experience-api:config name="Retail_Omnichannel_Experience_API_Config" doc:name="Retail Omnichannel Experience API Config" doc:id="7c5077d9-b66b-4d48-b8e2-d5b9b690ece8" property_host="${omni-experience-api.host}" property_port="${omni-experience-api.port}" property_basePath="${omni-experience-api.basePath}" property_protocol="${omni-experience-api.protocol}" />
-	<configuration-properties doc:name="Configuration properties" doc:id="64d4a0a4-e707-4fd9-aec8-b1e37f526a5f" file="common.properties" />
-	<configuration-properties doc:name="Configuration properties" doc:id="91fcfd57-2f93-4f86-b6c5-e9e4712965f4" file="mule.${mule.env}.properties" />
-	<os:object-store name="application_data" doc:name="Object store" doc:id="36e18fcf-d99f-499e-a0a0-90cac5dc5946" />
+		
 	<tls:context name="TLS_Context" doc:name="TLS Context" doc:id="725c01b9-93fe-4ab1-a3ce-d2e8b61efc9a" >
 		<tls:key-store type="jks" path="${keystore.location}" alias="${key.alias}" keyPassword="${key.password}" password="${keystore.password}"/>
 	</tls:context>
+	
+	<os:object-store name="application_data" doc:name="Object store" doc:id="36e18fcf-d99f-499e-a0a0-90cac5dc5946" />
+	
+	<http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="621fc208-2944-4753-9434-510cd4b9b499" >
+		<http:request-connection protocol="HTTPS" host="graph.facebook.com" port="443" />
+	</http:request-config>
+	
+	<retail-omnichannel-experience-api:config name="Retail_Omnichannel_Experience_API_Config" doc:name="Retail Omnichannel Experience API Config" doc:id="7c5077d9-b66b-4d48-b8e2-d5b9b690ece8" property_host="${omni-experience-api.host}" property_port="${omni-experience-api.port}" property_basePath="${omni-experience-api.basePath}" property_protocol="${omni-experience-api.protocol}">
+			<retail-omnichannel-experience-api:connection />
+	</retail-omnichannel-experience-api:config>
 	
 	<flow name="webhook-flow" doc:id="ceb150ca-9bdf-47a5-8a9a-292167527c48" >
 		<http:listener doc:name="/webhook" doc:id="b7dbb6a9-08d6-4a8a-802a-a2b3ed6d2d5e" config-ref="HTTP_Listener_config" path="/webhook"/>
 		<choice doc:name="Operation?" doc:id="c048cb38-e288-4429-a3c4-7299c55d8fc9" >
 			<when expression="#[attributes.method == 'POST']" >
-				<ee:transform doc:name="transform input to java and save psid" doc:id="e268a2e1-43a1-4bf0-8d5c-d0e50ecdb610" >
+				<ee:transform doc:name="Transform input and Save psid" doc:id="e268a2e1-43a1-4bf0-8d5c-d0e50ecdb610" >
 					<ee:message >
 						<ee:set-payload ><![CDATA[%dw 2.0
 output application/java
@@ -56,26 +64,26 @@ lower(payload.entry[0].messaging[0].message.text)]]></ee:set-variable>
 					<when expression="#[payload.entry[0].messaging[0].message != null]">
 						<choice doc:name="What action to perform?" doc:id="49644500-eaf3-4bfe-aa38-7a4c2da2a909" >
 							<when expression='#[vars.textMessage contains "hi"]' >
-								<flow-ref doc:name="greeting-response" doc:id="6b622fac-b033-4370-a243-ad7a4e9c8956" name="greeting-response"/>
+								<flow-ref doc:name="Ref to Greeting Response" doc:id="6b622fac-b033-4370-a243-ad7a4e9c8956" name="greeting-response"/>
 							</when>
 							<when expression='#[vars.textMessage contains "order"]' >
-								<flow-ref doc:name="orders-response" doc:id="6e85d4a8-542d-4b1a-9ca3-0226f6bccfd4" name="orders-response"/>
+								<flow-ref doc:name="Ref to Orders Response" doc:id="6e85d4a8-542d-4b1a-9ca3-0226f6bccfd4" name="orders-response"/>
 							</when>
 							<when expression='#[vars.textMessage contains "user"]' >
-								<flow-ref doc:name="logout-response" doc:id="34d617bc-930d-4c63-84d6-7a4eea24bf47" name="logout-response"/>
+								<flow-ref doc:name="Ref to Logout Response" doc:id="34d617bc-930d-4c63-84d6-7a4eea24bf47" name="logout-response"/>
 							</when>
 							<otherwise>
-								<flow-ref doc:name="echo-response" doc:id="1187adea-cc72-4fd8-81c7-e5fa971cd531" name="echo-response"/>
+								<flow-ref doc:name="Ref to Echo Response" doc:id="1187adea-cc72-4fd8-81c7-e5fa971cd531" name="echo-response"/>
 							</otherwise>
 						</choice>
 					</when>
 					<otherwise>
-						<logger level="INFO" doc:name="Logger" doc:id="c11b7595-0c9e-4c9c-aeb0-80576cd19715" message="POSTBACK - #[payload]"/>
+						<logger level="INFO" doc:name="POSTBACK Logger" doc:id="c11b7595-0c9e-4c9c-aeb0-80576cd19715" message="POSTBACK - #[payload]"/>
 					</otherwise>
 				</choice>
 			</when>
 			<otherwise >
-				<set-payload value="#[attributes.queryParams.'hub.challenge']" doc:name="Respond with challenge" doc:id="fe311edb-0fad-4fc9-8dc4-025ccd455b7a" />
+				<set-payload value="#[attributes.queryParams.'hub.challenge']" doc:name="Response with challenge" doc:id="fe311edb-0fad-4fc9-8dc4-025ccd455b7a" />
 			</otherwise>
 		</choice>
 		<error-handler >
@@ -95,13 +103,13 @@ output application/json
 }]]></ee:set-payload>
 					</ee:message>
 				</ee:transform>
-				<flow-ref doc:name="Call-Facebook-API" doc:id="bd6c3534-1f63-428f-8718-b12459349c92" name="Call-Facebook-API"/>
+				<flow-ref doc:name="Call Facebook Send API" doc:id="bd6c3534-1f63-428f-8718-b12459349c92" name="Call-Facebook-API"/>
 			</on-error-propagate>
 		</error-handler>
 	</flow>
 	<flow name="Call-Facebook-API" doc:id="ce77c6cc-b178-4f50-ac0f-c09fa5934f72" >
-		<set-variable value='#[p("access_token")]' doc:name="save access_token to variable" doc:id="58c5b5f0-6af8-4810-9bd6-9e156447a60b" variableName="accessToken"/>
-		<logger level="INFO" doc:name="Logger" doc:id="908e880c-a5ea-4e96-9fe7-725bf8f2aa8b" message="#[output application/json --- payload]"/>
+		<set-variable value='#[p("access_token")]' doc:name="Save access_token to Variable" doc:id="58c5b5f0-6af8-4810-9bd6-9e156447a60b" variableName="accessToken"/>
+		<logger level="INFO" doc:name="Log Request" doc:id="908e880c-a5ea-4e96-9fe7-725bf8f2aa8b" message="#[output application/json --- payload]"/>
 		<http:request method="POST" doc:name="Call Facebook Send API" doc:id="265769a4-eb63-4eee-81d9-69cec09045bc" config-ref="HTTP_Request_configuration" path="me/messages">
 			<http:query-params ><![CDATA[#[output applicaton/java
 ---
@@ -111,7 +119,7 @@ output application/json
 		</http:request>
 	</flow>
 	<flow name="echo-response" doc:id="83b28a84-1c0c-4b74-bae7-a5030eb435ad" >
-		<ee:transform doc:name="Response echo message" doc:id="da42a5e3-b4df-4f54-a986-048f90382fe3" >
+		<ee:transform doc:name="Response Echo Message" doc:id="da42a5e3-b4df-4f54-a986-048f90382fe3" >
 			<ee:message >
 				<ee:set-payload ><![CDATA[%dw 2.0
 output application/json
@@ -126,10 +134,10 @@ output application/json
 }]]></ee:set-payload>
 			</ee:message>
 		</ee:transform>
-		<flow-ref doc:name="Call-Facebook-API" doc:id="d7227403-f332-4322-b8d1-fd1562a60ad3" name="Call-Facebook-API"/>
+		<flow-ref doc:name="Call Facebook Send API" doc:id="d7227403-f332-4322-b8d1-fd1562a60ad3" name="Call-Facebook-API"/>
 	</flow>
 	<flow name="list-response" doc:id="3bf90b96-e50d-40e5-9e59-3fc87db224e2" >
-		<ee:transform doc:name="Response list message" doc:id="c78f8e2e-836b-4ee8-ade4-c69bf3407298" >
+		<ee:transform doc:name="Response List Message" doc:id="c78f8e2e-836b-4ee8-ade4-c69bf3407298" >
 			<ee:message >
 				<ee:set-payload ><![CDATA[%dw 2.0
 output application/json
@@ -144,10 +152,10 @@ output application/json
 }]]></ee:set-payload>
 			</ee:message>
 		</ee:transform>
-		<flow-ref doc:name="Call-Facebook-API" doc:id="acc24300-12b3-4a86-8e88-4670da652246" name="Call-Facebook-API"/>
+		<flow-ref doc:name="Call Facebook Send API" doc:id="acc24300-12b3-4a86-8e88-4670da652246" name="Call-Facebook-API"/>
 	</flow>
 	<flow name="greeting-response" doc:id="d3295ad5-0ded-4719-b20c-3bff210d70cd" >
-		<ee:transform doc:name="Response greeting message" doc:id="13e6c209-7af4-4205-856e-4e222ecd575c" >
+		<ee:transform doc:name="Response Greeting Message" doc:id="13e6c209-7af4-4205-856e-4e222ecd575c" >
 			<ee:message >
 				<ee:set-payload ><![CDATA[%dw 2.0
 output application/json
@@ -162,13 +170,13 @@ output application/json
 }]]></ee:set-payload>
 			</ee:message>
 		</ee:transform>
-		<flow-ref doc:name="Call-Facebook-API" doc:id="b7410ae0-b995-4f9d-8817-744c87a27b2f" name="Call-Facebook-API"/>
+		<flow-ref doc:name="Call Facebook Send API" doc:id="b7410ae0-b995-4f9d-8817-744c87a27b2f" name="Call-Facebook-API"/>
 	</flow>
 	<flow name="create-orders-response" doc:id="e437108d-b437-45bf-9c65-f35a1823a9e9" >
 		<retail-omnichannel-experience-api:get-orders-for-customer doc:name="Get orders for customer" doc:id="2914f91f-3e81-4ab1-aac5-b78d93e6a09e" customer-id="#[vars.customerData.customerId]" config-ref="Retail_Omnichannel_Experience_API_Config"/>
 		<choice doc:name="Some orders?" doc:id="dbb592f4-cf2a-462e-959d-785978e36272" >
 			<when expression="#[sizeOf(payload) &gt; 0]" >
-				<ee:transform doc:name="Extract data about last order" doc:id="9d34c1f1-fdc4-404a-b8b7-4a46cfbca6fd" >
+				<ee:transform doc:name="Extract Data about Last Order" doc:id="9d34c1f1-fdc4-404a-b8b7-4a46cfbca6fd" >
 					<ee:message >
 						<ee:set-payload ><![CDATA[%dw 2.0
 output application/java
@@ -221,7 +229,7 @@ output application/java
 []]]></ee:set-variable>
 					</ee:variables>
 				</ee:transform>
-				<foreach doc:name="For Each" doc:id="820b1d5c-ec7a-48bf-8bad-543c885be0b9" collection="#[vars.partners]">
+				<foreach doc:name="For Each Partner" doc:id="820b1d5c-ec7a-48bf-8bad-543c885be0b9" collection="#[vars.partners]">
 					<retail-omnichannel-experience-api:get-partner doc:name="Get partner" doc:id="9908e7f6-c441-4dc2-8080-637f4600e679" partner-id="#[payload]" config-ref="Retail_Omnichannel_Experience_API_Config"/>
 					<ee:transform doc:name="Add Partner to List" doc:id="9c1e9c84-9fc9-41d0-80b4-20b82b3ec998" >
 						<ee:message >
@@ -234,9 +242,9 @@ vars.listPartners + payload]]></ee:set-variable>
 						</ee:variables>
 					</ee:transform>
 				</foreach>
-				<foreach doc:name="For Each" doc:id="b19aae2f-3685-4877-9f36-650a7472aec7" collection="#[vars.stores]">
+				<foreach doc:name="For Each Store" doc:id="b19aae2f-3685-4877-9f36-650a7472aec7" collection="#[vars.stores]">
 					<retail-omnichannel-experience-api:get-store doc:name="Get store" doc:id="5e2aa092-1def-4512-8dc3-11a2f810c3b3" store-id="#[payload]" config-ref="Retail_Omnichannel_Experience_API_Config"/>
-					<ee:transform doc:name="Add Store to list" doc:id="2daa11d4-49b0-423e-ab85-e0e855f535c6" >
+					<ee:transform doc:name="Add Store to List" doc:id="2daa11d4-49b0-423e-ab85-e0e855f535c6" >
 						<ee:message >
 						</ee:message>
 						<ee:variables >
@@ -249,7 +257,7 @@ vars.listStores + payload]]></ee:set-variable>
 				</foreach>
 				<choice doc:name="Are Shipment and Partners items available?" doc:id="e0817a17-487c-4056-a733-5c1eef235948" >
 					<when expression="#[payload == true]" >
-						<flow-ref doc:name="list-response" doc:id="a7cdfd8d-bcbf-47eb-a0b0-fd02763b77e4" name="list-response"/>
+						<flow-ref doc:name="Ref to List Response" doc:id="a7cdfd8d-bcbf-47eb-a0b0-fd02763b77e4" name="list-response"/>
 						<retail-omnichannel-experience-api:get-customer doc:name="Get customer" doc:id="a499a75a-4c56-4e26-9f00-550969f9e61f" customer-id="#[vars.lastOrder.customerId]" config-ref="Retail_Omnichannel_Experience_API_Config"/>
 						<set-variable value='#[payload.firstName ++ " " ++ payload.lastName]' doc:name="Set recipient" doc:id="4ecafe01-9ba2-4872-b0c4-977f3cab1c2c" variableName="recipient"/>
 						<foreach doc:name="For Each Partner Item" doc:id="77b639e1-58d2-4cdd-8e6a-724da570bcde" collection="#[vars.lastOrder.orderItems.partnersItems]">
@@ -359,7 +367,7 @@ output application/json
 						</ee:transform>
 					</when>
 					<otherwise >
-						<logger level="INFO" doc:name="Logger" doc:id="dffaa44e-4206-4b95-8505-0f493ce98062" message="Order only for PICKUP"/>
+						<logger level="INFO" doc:name="Order only for PICKUP" doc:id="dffaa44e-4206-4b95-8505-0f493ce98062" message="Order only for PICKUP"/>
 						<foreach doc:name="For Each Pickup item" doc:id="50f3989c-3264-4a10-80b2-4136921ead6b" collection="#[vars.lastOrder.orderItems.pickupItems]">
 							<ee:transform doc:name="Add item to listItems" doc:id="e621f4e9-adec-4314-b03d-17ec4b15aabd" >
 								<ee:message >
@@ -442,14 +450,14 @@ output application/json
 				</ee:transform>
 			</otherwise>
 		</choice>
-		<flow-ref doc:name="Call-Facebook-API" doc:id="8393a0dc-2fc6-454e-a9ac-f0f519f538b0" name="Call-Facebook-API"/>
+		<flow-ref doc:name="Call Facebook Send API" doc:id="8393a0dc-2fc6-454e-a9ac-f0f519f538b0" name="Call-Facebook-API"/>
 	</flow>
 	<flow name="orders-response" doc:id="061fea05-a763-405b-a7e7-88b4bd8ac33d" >
-		<os:contains doc:name="Check presence of customer data by PSID" doc:id="03c1de28-7957-44aa-ba88-d3dec03468e2" objectStore="application_data" key="#[vars.psid]"/>
+		<os:contains doc:name="Check Presence of Customer Data by psid" doc:id="03c1de28-7957-44aa-ba88-d3dec03468e2" objectStore="application_data" key="#[vars.psid]"/>
 		<choice doc:name="Is messenger user record present?" doc:id="51ffb55a-766d-4fe0-a847-4199190a1196" >
 			<when expression="#[payload == true]" >
-				<os:retrieve doc:name="Retrieve by PSID to var customerData" doc:id="10c17ecc-a137-41f7-b8da-65a97a05b1b1" key="#[vars.psid]" objectStore="application_data" target="customerData"/>
-				<flow-ref doc:name="create-orders-response" doc:id="85456879-a498-4e2e-aef9-fd9ee813c561" name="create-orders-response"/>
+				<os:retrieve doc:name="Retrieve customerId by psid" doc:id="10c17ecc-a137-41f7-b8da-65a97a05b1b1" key="#[vars.psid]" objectStore="application_data" target="customerData"/>
+				<flow-ref doc:name="Ref to Create Orders Response" doc:id="85456879-a498-4e2e-aef9-fd9ee813c561" name="create-orders-response"/>
 				<ee:transform doc:name="Response message" doc:id="45a2895f-c254-4f6d-b13d-7ac20be6cf86" >
 					<ee:message >
 						<ee:set-payload ><![CDATA[%dw 2.0
@@ -469,8 +477,8 @@ output application/json
 				</ee:transform>
 			</when>
 			<otherwise >
-				<logger level="INFO" doc:name="User must login first" doc:id="2886b9f3-b828-410f-afc4-19958bda2474" message="Going to log in user"/>
-				<ee:transform doc:name="Reply with login link" doc:id="ee8921de-83f1-4e12-840d-7e966079aa49" >
+				<logger level="INFO" doc:name="Customer Login" doc:id="2886b9f3-b828-410f-afc4-19958bda2474" message="Going to log in user"/>
+				<ee:transform doc:name="Reply with Login Link" doc:id="ee8921de-83f1-4e12-840d-7e966079aa49" >
 					<ee:message >
 						<ee:set-payload ><![CDATA[%dw 2.0
 output application/json
@@ -506,19 +514,19 @@ var loginUrl = p('user.login.url')
 				</ee:transform>
 			</otherwise>
 		</choice>
-		<flow-ref doc:name="Call-Facebook-API" doc:id="9434834f-5dbe-4355-a743-4e8cbce084df" name="Call-Facebook-API"/>
+		<flow-ref doc:name="Call Facebook Send API" doc:id="9434834f-5dbe-4355-a743-4e8cbce084df" name="Call-Facebook-API"/>
 	</flow>
 	<flow name="logout-response" doc:id="7c189c11-6619-42fd-a322-b392b197e840" >
-		<os:contains doc:name="Contains" doc:id="cb25ef9c-35e8-4385-a7db-55f320265b6a" key="#[vars.psid]" objectStore="application_data"/>
+		<os:contains doc:name="Check Presence of Customer Data by psid" doc:id="cb25ef9c-35e8-4385-a7db-55f320265b6a" key="#[vars.psid]" objectStore="application_data"/>
 		<choice doc:name="psid exists?" doc:id="d26e6757-7078-4f41-8c57-34f4d8ba3031" >
 			<when expression="#[payload == true]" >
-				<os:remove doc:name="Remove" doc:id="6d3e237d-2e51-4e01-96dd-c632c0a79803" key="#[vars.psid]" objectStore="application_data" />
+				<os:remove doc:name="Remove psid" doc:id="6d3e237d-2e51-4e01-96dd-c632c0a79803" key="#[vars.psid]" objectStore="application_data" />
 			</when>
 			<otherwise >
-				<logger level="INFO" doc:name="customer not exists" doc:id="16206b1c-eeb9-4ced-962d-1a3c02ada890" message="Customer not exists"/>
+				<logger level="INFO" doc:name="Customer not exists" doc:id="16206b1c-eeb9-4ced-962d-1a3c02ada890" message="Customer not exists"/>
 			</otherwise>
 		</choice>
-		<ee:transform doc:name="Reply with login link" doc:id="bcd16921-878c-479a-b927-a860fe2f0d5d" >
+		<ee:transform doc:name="Reply with Login Link" doc:id="bcd16921-878c-479a-b927-a860fe2f0d5d" >
 			<ee:message >
 				<ee:set-payload ><![CDATA[%dw 2.0
 output application/json
@@ -552,12 +560,12 @@ var loginUrl = p('user.login.url')
 }]]></ee:set-payload>
 			</ee:message>
 		</ee:transform>
-		<flow-ref doc:name="Call-Facebook-API" doc:id="535ae84e-a542-4794-9e41-55a2b22e3a84" name="Call-Facebook-API"/>
+		<flow-ref doc:name="Call Facebook Send API" doc:id="535ae84e-a542-4794-9e41-55a2b22e3a84" name="Call-Facebook-API"/>
 	</flow>
 	<flow name="after-login" doc:id="4d7b6ec9-c170-4fdf-b573-95e277716d78" >
-		<http:listener doc:name="Listener" doc:id="5406768b-5e59-4d36-b569-fed6c2a5309e" config-ref="HTTP_Listener_config" path="/callback" allowedMethods="GET,OPTIONS,POST"/>
+		<http:listener doc:name="/callback" doc:id="5406768b-5e59-4d36-b569-fed6c2a5309e" config-ref="HTTP_Listener_config" path="/callback" allowedMethods="GET,OPTIONS,POST"/>
 		<logger level="INFO" doc:name="Log input data" doc:id="c27f82b5-e074-4aac-bb5c-dee878454c85" message="#[output application/json --- payload]"/>
-		<ee:transform doc:name="extract useful data" doc:id="4ea5c2a6-5f25-47fc-87e4-c75d68f2a701" >
+		<ee:transform doc:name="Extract useful Data" doc:id="4ea5c2a6-5f25-47fc-87e4-c75d68f2a701" >
 			<ee:message >
 			</ee:message>
 			<ee:variables >
@@ -577,12 +585,12 @@ fun toUrlSafeCustomerId(value) = value replace '|' with '_'
 }]]></ee:set-variable>
 			</ee:variables>
 		</ee:transform>
-		<os:store doc:name="save customerId under psid key" doc:id="32039c35-2fdf-4ea2-9492-fa2e1d4f1d93" key="#[vars.customerData.psid]" objectStore="application_data">
+		<os:store doc:name="Save customerId under psid Key" doc:id="32039c35-2fdf-4ea2-9492-fa2e1d4f1d93" key="#[vars.customerData.psid]" objectStore="application_data">
 			<os:value ><![CDATA[#[vars.customerData]]]></os:value>
 		</os:store>
 		<choice doc:name="Choose action after login" doc:id="d5bac5b9-fa00-4c31-afd4-ec5ad407d743" >
 			<when expression='#[vars.customerData.action == "order"]' >
-				<ee:transform doc:name="Prepare message to send to FB" doc:id="ada86e71-9fe5-43fb-bb8a-440149de817c" >
+				<ee:transform doc:name="Prepare Message to Send to FB" doc:id="ada86e71-9fe5-43fb-bb8a-440149de817c" >
 					<ee:message >
 						<ee:set-payload ><![CDATA[%dw 2.0
 output application/json
@@ -597,12 +605,12 @@ output application/json
 }]]></ee:set-payload>
 					</ee:message>
 				</ee:transform>
-				<flow-ref doc:name="Call-Facebook-API" doc:id="ef8a936b-2b96-4842-b84d-d42cdf79895e" name="Call-Facebook-API"/>
-				<set-variable value="#[vars.customerData.psid]" doc:name="set psid" doc:id="d47130c4-287b-429e-b88b-150c876efc26" variableName="psid"/>
-				<flow-ref doc:name="orders-response" doc:id="f53eef5c-1837-4595-81a0-8a2533296e25" name="orders-response"/>
+				<flow-ref doc:name="Call Facebook Send API" doc:id="ef8a936b-2b96-4842-b84d-d42cdf79895e" name="Call-Facebook-API"/>
+				<set-variable value="#[vars.customerData.psid]" doc:name="Set psid" doc:id="d47130c4-287b-429e-b88b-150c876efc26" variableName="psid"/>
+				<flow-ref doc:name="Ref to Orders Response" doc:id="f53eef5c-1837-4595-81a0-8a2533296e25" name="orders-response"/>
 			</when>
 			<otherwise >
-				<ee:transform doc:name="Prepare logged in message" doc:id="6b1d69d8-e89c-4e68-9f28-3c0d7d36f820" >
+				<ee:transform doc:name="Prepare Logged in Message" doc:id="6b1d69d8-e89c-4e68-9f28-3c0d7d36f820" >
 					<ee:message >
 						<ee:set-payload ><![CDATA[%dw 2.0
 output application/json
@@ -617,13 +625,13 @@ output application/json
 }]]></ee:set-payload>
 					</ee:message>
 				</ee:transform>
-				<flow-ref doc:name="Call-Facebook-API" doc:id="159e0fc6-5240-4899-844d-b779d99b813f" name="Call-Facebook-API"/>
+				<flow-ref doc:name="Call Facebook Send API" doc:id="159e0fc6-5240-4899-844d-b779d99b813f" name="Call-Facebook-API"/>
 			</otherwise>
 		</choice>
 	</flow>
 	<flow name="facebook-bot-site" doc:id="5cf3e879-889f-41c4-8993-5b936d00c657" >
 		<http:listener doc:name="Listener" doc:id="7ee31209-06c9-4cae-8e6c-8c6783ae378e" config-ref="HTTP_Listener_config" path="/"/>
-		<logger level="DEBUG" doc:name="Logger" doc:id="318a3bf0-cf2b-4edb-bf66-8cd0cc7cb93a" message="#[payload]"/>
-		<set-payload value="Hello Facebook Bot!" doc:name="Set Payload" doc:id="317a2e6f-4215-4911-89a5-f4f7a3f92176" />
+		<logger level="DEBUG" doc:name="Log input" doc:id="318a3bf0-cf2b-4edb-bf66-8cd0cc7cb93a" message="#[payload]"/>
+		<set-payload value="Hello Facebook Bot!" doc:name="Greeting a Bot" doc:id="317a2e6f-4215-4911-89a5-f4f7a3f92176" />
 	</flow>
 </mule>
