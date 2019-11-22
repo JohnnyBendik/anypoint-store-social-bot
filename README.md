@@ -17,7 +17,7 @@ Note that using this template is subject to the conditions of this [License Agre
 Please review the terms of the license before downloading and using this template. In short, you are allowed to use the template for free with Mule ESB Enterprise Edition, CloudHub, or as a trial in Anypoint Studio.
 
 # Use Case <a name="usecase"/>
-Anypoint Store Social Bot is an experience that demonstrates how customers can interact with social bots powered by services like Facebook. This template should serve as an implementation best practice for how Omnichannel APIs can be reused and integrated with Facebook Messenger. The Anypoint Store Social Bot template represents communication between customers and Facebook Messenger Bot. The Bot provides the functionality of querying existent last order from Retail Omnichannel Experience API for authenticated user (customer) from Anypoint Store. Implemented operation:
+Anypoint Store Social Bot is an experience that demonstrates how customers can interact with social bots powered by services like Facebook. This template should serve as an implementation best practice for how Omnichannel APIs can be reused and integrated with Facebook Messenger. The Anypoint Store Social Bot template represents communication between customers and Facebook Messenger Bot. The Bot provides the functionality of querying existent last order from Retail Omnichannel Experience API for authenticated user (customer) from Anypoint Store.
 
 ## Setup <a name="setup"/>
 What is important to set for communication of messenger user (customer) with social bot:
