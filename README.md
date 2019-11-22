@@ -1,9 +1,9 @@
 # Anypoint Store Social Bot
- 
+
 + [License Agreement](#licenseagreement)
 + [Use Case](#usecase)
+	* [Setup](#setup)
 + [Considerations](#considerations)
-	* [APIs security considerations](#apissecurityconsiderations)
 + [Run it!](#runit)
 	* [Running on premise](#runonopremise)
 	* [Running on Studio](#runonstudio)
@@ -17,28 +17,23 @@ Note that using this template is subject to the conditions of this [License Agre
 Please review the terms of the license before downloading and using this template. In short, you are allowed to use the template for free with Mule ESB Enterprise Edition, CloudHub, or as a trial in Anypoint Studio.
 
 # Use Case <a name="usecase"/>
+Anypoint Store Social Bot is an experience that demonstrates how customers can interact with social bots powered by services like Facebook. This template should serve as an implementation best practice for how Omnichannel APIs can be reused and integrated with Facebook Messenger. The Anypoint Store Social Bot template represents communication between customers and Facebook Messenger Bot. The Bot provides the functionality of querying existent last order from Retail Omnichannel Experience API for authenticated user (customer) from Anypoint Store. Implemented operation:
 
-Anypoint Store Social Bot project provides communication between customers and Facebook Messenger Bot. Bot provides the functionality of querying existent orders from OMNICHANNEL API.
-
-## Setup
+## Setup <a name="setup"/>
+What is important to set for communication of messenger user (customer) with social bot:
 1. Create Facebook App
 2. Create Facebook Page
-3. Configure App with access_token
-4. Deploy App
+3. Configure Template with access_token and keystore
+4. Deploy Template to CloudHub
 5. Configure Facebook App
 6. Open your created Facebook Page, click on Send Message and Test Button
-7. Start chat with social bot 
+7. Start chat with social bot
 
-## Resources
-* Facebook Messenger Quick Start - https://developers.facebook.com/docs/messenger-platform/guides/quick-start/
+Detailed information on [Facebook Messenger App Setup](https://developers.facebook.com/docs/messenger-platform/getting-started/app-setup).
 
 # Considerations <a name="considerations"/>
 
 To make this Anypoint Template run, there are certain preconditions that must be considered. **Failing to do so could lead to unexpected behavior of the template.**
-
-## APIs security considerations <a name="apissecurityconsiderations"/>
-This Experience API is meant to be deployed to CloudHub and managed using the API Platform Manager.
-   
 
 # Run it! <a name="runit"/>
 Simple steps to get Anypoint Store Social Bot running.
@@ -55,12 +50,12 @@ First thing to know if you are a newcomer to Mule is where to get the tools.
 + You can download Mule ESB from this [Location](http://www.mulesoft.com/platform/soa/mule-esb-open-source-esb)
 
 ### Importing an Anypoint Template into Studio
-Mule Studio offers several ways to import a project into the workspace, for instance: 
+Mule Studio offers several ways to import a project into the workspace, for instance:
 
 + Anypoint Studio Project from File System
 + Packaged mule application (.jar)
 
-You can find a detailed description on how to do so in this [Documentation Page](http://www.mulesoft.org/documentation/display/current/Importing+and+Exporting+in+Studio).
+You can find a detailed description on how to do so in this [Documentation Page](https://docs.mulesoft.com/studio/7.4/import-export-packages).
 
 ### Running on Studio <a name="runonstudio"/>
 Once you have imported you Anypoint Template into Anypoint Studio you need to follow these steps to run it:
@@ -68,19 +63,20 @@ Once you have imported you Anypoint Template into Anypoint Studio you need to fo
 + Generate keystore (You can find a detailed description on how to do so in this [Documentation Page](https://docs.mulesoft.com/mule-user-guide/v/4.1/tls-configuration#generating-keystores-and-truststores))
 + Locate the properties file `mule-<env>.properties`, in src/main/resources
 + Complete all the properties required as per the examples in the section [Properties to be configured](#propertiestobeconfigured)
-+ Once that is done, right click on you Anypoint Template project folder 
++ Once that is done, right click on you Anypoint Template project folder
 + Hover you mouse over `"Run as"`
 + Click on  `"Mule Application"`
 
 ### Running on Mule ESB stand alone <a name="runonmuleesbstandalone"/>
-Complete all properties in one of the property files, for example in [mule.prod.properties](../master/src/main/resources/mule.prod.properties) and run your app with the corresponding environment variable to use it. To follow the example, this will be `mule.env=prod`. 
+Complete all properties in one of the property files, for example in [mule.prod.properties](../master/src/main/resources/mule.prod.properties) and run your app with the corresponding environment variable to use it. To follow the example, this will be `mule.env=prod`.
 
 ## Running on CloudHub <a name="runoncloudhub"/>
-While [creating your application on CloudHub](http://www.mulesoft.org/documentation/display/current/Hello+World+on+CloudHub) (Or you can do it later as a next step), you need to go to `"Manage Application"` > `"Properties"` to set all environment variables detailed in **Properties to be configured**.
-Follow other steps defined [here](#runonpremise) and once your app is all set and started, there is no need to do anything else.
+While creating your application on CloudHub (or you can do it later as a next step), go to Runtime Manager > Manage Application > Properties to set the environment variables listed in "Properties to Configure" as well as the mule.env.
+
+To create your application in CloudHub, go to Deployment > Advanced to set all environment variables detailed in "Properties to Configure" as well as in mule.env.
 
 ### Deploying your Anypoint Template on CloudHub <a name="deployingyouranypointtemplateoncloudhub"/>
-Mule Studio provides you with really easy way to deploy your Template directly to CloudHub, for the specific steps to do so please check this [link](http://www.mulesoft.org/documentation/display/current/Deploying+Mule+Applications#DeployingMuleApplications-DeploytoCloudHub)
+In Studio, right click your project name in Package Explorer and select Anypoint Platform > Deploy on CloudHub. More details [here.](https://docs.mulesoft.com/runtime-manager/deploying-to-cloudhub)
 
 ## Properties to be configured (With examples) <a name="propertiestobeconfigured"/>
 In order to use this Mule Anypoint Template you need to configure properties (Credentials, configurations, etc.) either in properties file or in CloudHub as Environment Variables.
@@ -97,8 +93,8 @@ Detailed list with examples:
 + omni-experience-api.port `443`
 + omni-experience-api.basePath `/api`
 + omni-experience-api.protocol `HTTP`
-  
-### Keystore properties 
+
+### Keystore properties
 + keystore.location `keystore.jks`
 + keystore.password `pass1`
 + key.password `pass2`
